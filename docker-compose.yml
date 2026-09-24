@@ -9,6 +9,13 @@ services:
     restart: unless-stopped
     ports:
       - "8000:8000"
+    command: ["uvicorn", "velopulse.main:app", "--host", "0.0.0.0", "--port", "8000", "--reload"]
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:8000/health"]
+      interval: 90s
+      timeout: 5s
+      retries: 3
+      start_period: 10s
     environment:
       - ENVIRONMENT=development
       - DEBUG=true

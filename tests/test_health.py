@@ -11,7 +11,11 @@ async def test_health_check_returns_200(async_client: AsyncClient) -> None:
 
     assert response.status_code == 200
     data = response.json()
-    assert data["status"] == "healthy"
+    assert data["status"] in ("healthy", "degraded")
     assert data["project"] == "VeloPulse"
     assert "version" in data
     assert "environment" in data
+    assert "timestamp" in data
+    assert "checks" in data
+    assert "database" in data["checks"]
+    assert "redis" in data["checks"]
