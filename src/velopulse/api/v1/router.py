@@ -2,10 +2,10 @@
 
 from fastapi import APIRouter
 
+from velopulse.api.v1.auth import router as auth_router
+from velopulse.api.v1.webhooks import router as webhooks_router
+
 api_router = APIRouter()
 
-# Future routers will be mounted here:
-# api_router.include_router(auth.router, prefix="/auth", tags=["auth"])
-# api_router.include_router(webhooks.router, prefix="/webhooks", tags=["webhooks"])
-# api_router.include_router(bikes.router, prefix="/bikes", tags=["bikes"])
-# api_router.include_router(components.router, prefix="/components", tags=["components"])
+api_router.include_router(auth_router, prefix="/auth", tags=["Authentication"])
+api_router.include_router(webhooks_router, prefix="/webhooks", tags=["Webhooks"])
