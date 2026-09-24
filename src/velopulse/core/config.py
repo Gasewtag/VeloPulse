@@ -22,6 +22,7 @@ class Settings(BaseSettings):
     PROJECT_NAME: str = "VeloPulse"
     API_V1_STR: str = "/api/v1"
     SECRET_KEY: str = "temporary-dev-secret-key-change-in-production-min-32-bytes"
+    ENCRYPTION_KEY: str = ""
 
     # Server Binding
     HOST: str = "0.0.0.0"
@@ -38,11 +39,15 @@ class Settings(BaseSettings):
     # Redis Broker & Cache
     REDIS_URL: str = "redis://localhost:6379/0"
 
-    # Strava API Credentials
-    STRAVA_CLIENT_ID: str = ""
-    STRAVA_CLIENT_SECRET: str = ""
-    STRAVA_VERIFY_TOKEN: str = ""
-    STRAVA_WEBHOOK_CALLBACK_URL: str = ""
+    # Strava Integration (OAuth 2.0 & Webhooks)
+    # Note: As of June 2026, creating Strava developer applications requires an active
+    # Strava subscription. STRAVA_MOCK_MODE=True enables offline development and testing
+    # with synthetic payloads matching Strava API specifications.
+    STRAVA_MOCK_MODE: bool = True
+    STRAVA_CLIENT_ID: str = "mock_strava_client_id"
+    STRAVA_CLIENT_SECRET: str = "mock_strava_client_secret"
+    STRAVA_VERIFY_TOKEN: str = "velopulse_dev_verify_token_2026"
+    STRAVA_WEBHOOK_CALLBACK_URL: str = "http://localhost:8000/api/v1/webhooks/strava"
 
     # Telegram Bot
     TELEGRAM_BOT_TOKEN: str = ""

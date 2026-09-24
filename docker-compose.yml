@@ -23,8 +23,12 @@ services:
       - POSTGRES_PORT=5432
       - POSTGRES_USER=${POSTGRES_USER}
       - POSTGRES_PASSWORD=${POSTGRES_PASSWORD}
-      - POSTGRES_DB=${POSTGRES_DB}
       - REDIS_URL=redis://redis:6379/0
+      - STRAVA_MOCK_MODE=${STRAVA_MOCK_MODE:-true}
+      - STRAVA_CLIENT_ID=${STRAVA_CLIENT_ID:-mock_strava_client_id}
+      - STRAVA_CLIENT_SECRET=${STRAVA_CLIENT_SECRET:-mock_strava_client_secret}
+      - STRAVA_VERIFY_TOKEN=${STRAVA_VERIFY_TOKEN:-velopulse_dev_verify_token_2026}
+      - STRAVA_WEBHOOK_CALLBACK_URL=${STRAVA_WEBHOOK_CALLBACK_URL:-http://localhost:8000/api/v1/webhooks/strava}
       - TELEGRAM_BOT_TOKEN=${TELEGRAM_BOT_TOKEN}
     volumes:
       - ./src:/app/src
@@ -77,6 +81,22 @@ services:
       start_period: 5s
     networks:
       - velopulse-network
+
+  ngrok:
+    image: ngrok/ngrok:latest
+    container_name: velopulse_ngrok
+    restart: unless-stopped
+    command: ["http", "api:8000"]
+    environment:
+      - NGROK_AUTHTOKEN=${NGROK_AUTHTOKEN:-}
+    ports:
+      - "4040:4040"
+    depends_on:
+      - api
+    networks:
+      - velopulse-network
+    profiles:
+      - tunnel
 
 volumes:
   postgres_data:
