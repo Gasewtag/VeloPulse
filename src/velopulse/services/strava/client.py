@@ -3,11 +3,13 @@
 import logging
 import time
 from urllib.parse import urlencode
+from datetime import datetime, timezone
 
 import httpx
 
 from velopulse.core.config import Settings, get_settings
 from velopulse.domain.strava import (
+    StravaActivityDetailed,
     StravaAthleteSummary,
     StravaGearSummary,
     StravaRefreshTokenResponse,
@@ -230,3 +232,34 @@ class StravaClient:
                     status_code=response.status_code,
                     response_body=response.text,
                 )
+
+    async def get_activity(self, access_token: str, activity_id: int) -> StravaActivityDetailed:
+        """Fetch detailed activity from Strava API."""
+        if self.settings.STRAVA_MOCK_MODE:
+            logger.info("Serving synthetic Strava activity for mock activity_id: %d", activity_id)
+            return StravaActivityDetailed(
+                id=activity_id,
+                name="Mock Ride",
+                distance=25000.0,
+                moving_time=3600,
+                total_elevation_gain=250.0,
+                type="Ride",
+                sport_type="Ride",
+                start_date=datetime.now(timezone.utc),
+                start_latlng=[37.7749, -122.4194],
+                gear_id="b1234567"
+            )
+
+        headers = {"Authorization": f"Bearer {access_token}"}
+        url = f"{self.STRAVA_API_BASE_URL}/activities/{activity_id}"
+
+        async with httpx.AsyncClient(timeout=10.0) as client:
+            response = await client.get(url, headers=headers)
+            if response.status_code != 200:
+                raise StravaAPIError(
+                    f"Failed to fetch activity: {response.text}",
+                    status_code=response.status_code,
+                    response_body=response.text,
+                )
+            return StravaActivityDetailed.model_validate(response.json())
+

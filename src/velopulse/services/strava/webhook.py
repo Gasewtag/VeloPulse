@@ -12,9 +12,9 @@ from velopulse.domain.strava import (
     StravaWebhookEvent,
 )
 
-logger = logging.getLogger("velopulse.strava.webhook")
+from velopulse.tasks.activities import ingest_activity_task
 
-REDIS_WEBHOOK_QUEUE_KEY = "velopulse:queue:strava_webhooks"
+logger = logging.getLogger("velopulse.strava.webhook")
 
 
 class StravaWebhookService:
@@ -56,8 +56,7 @@ class StravaWebhookService:
         event: StravaWebhookEvent,
         redis_client: aioredis.Redis,
     ) -> None:
-        """Push raw event into Redis queue for background consumption (<50ms SLA)."""
-        event_json = event.model_dump_json()
+        """Enqueue event for background ingestion via Taskiq (<50ms SLA)."""
         logger.info(
             "Ingesting Strava event: object=%s, id=%s, aspect=%s, owner=%s",
             event.object_type,
@@ -65,12 +64,14 @@ class StravaWebhookService:
             event.aspect_type,
             event.owner_id,
         )
-        try:
-            await redis_client.lpush(REDIS_WEBHOOK_QUEUE_KEY, event_json)
-        except Exception as exc:
-            logger.error("Failed to push webhook event to Redis queue: %s", exc)
-            # Re-raise so FastAPI surfaces transient internal error if queue unreachable
-            raise HTTPException(
-                status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
-                detail="Failed to enqueue webhook event",
-            ) from exc
+        if event.object_type == "activity" and event.aspect_type == "create":
+            try:
+                await ingest_activity_task.kiq(event.owner_id, event.object_id)
+            except Exception as exc:
+                logger.error("Failed to enqueue webhook event via Taskiq: %s", exc)
+                # Re-raise so FastAPI surfaces transient internal error if broker unreachable
+                raise HTTPException(
+                    status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
+                    detail="Failed to enqueue webhook event",
+                ) from exc
+
