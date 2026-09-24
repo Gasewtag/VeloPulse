@@ -22,7 +22,7 @@ RUN python -m venv /opt/venv
 ENV PATH="/opt/venv/bin:$PATH"
 
 RUN pip install --no-cache-dir --upgrade pip setuptools wheel hatchling && \
-    pip install --no-cache-dir .
+    pip install --no-cache-dir ".[dev]"
 
 # Stage 2: Runtime stage
 FROM python:3.12-slim AS runner
@@ -45,7 +45,8 @@ RUN groupadd -g 10001 appgroup && \
     useradd -u 10001 -g appgroup -s /bin/bash -m appuser
 
 # Copy application code and project metadata
-COPY pyproject.toml README.md /app/
+COPY pyproject.toml README.md alembic.ini /app/
+COPY alembic/ /app/alembic/
 COPY src/ /app/src/
 
 RUN chown -R appuser:appgroup /app
