@@ -127,3 +127,21 @@ class StravaSubscription(BaseModel):
     callback_url: str
     created_at: datetime
     updated_at: datetime
+
+
+class StravaActivityDetailed(BaseModel):
+    """Detailed activity information from Strava."""
+
+    model_config = ConfigDict(extra="ignore")
+
+    id: int
+    name: str
+    distance: float
+    moving_time: int
+    total_elevation_gain: float
+    type: str
+    sport_type: str
+    start_date: datetime
+    start_latlng: list[float] | None = None
+    gear_id: str | None = None
+

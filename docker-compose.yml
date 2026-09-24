@@ -98,6 +98,35 @@ services:
     profiles:
       - tunnel
 
+  worker:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    container_name: velopulse_worker
+    restart: unless-stopped
+    command: ["taskiq", "worker", "velopulse.tasks.broker:broker", "velopulse.tasks.activities"]
+    environment:
+      - PYTHONPATH=/app/src
+      - ENVIRONMENT=development
+      - DEBUG=true
+      - SECRET_KEY=${SECRET_KEY}
+      - POSTGRES_SERVER=postgres
+      - POSTGRES_PORT=5432
+      - POSTGRES_USER=${POSTGRES_USER}
+      - POSTGRES_PASSWORD=${POSTGRES_PASSWORD}
+      - REDIS_URL=redis://redis:6379/0
+      - STRAVA_MOCK_MODE=${STRAVA_MOCK_MODE:-true}
+    volumes:
+      - ./src:/app/src
+      - ./tests:/app/tests
+    depends_on:
+      postgres:
+        condition: service_healthy
+      redis:
+        condition: service_healthy
+    networks:
+      - velopulse-network
+
 volumes:
   postgres_data:
     driver: local
