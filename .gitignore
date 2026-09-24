@@ -1,0 +1,148 @@
+# ==============================================================================
+# VeloPulse Repository .gitignore
+# Production-grade ignore rules for Python 3.12, Docker, IDEs, and environments.
+# ==============================================================================
+
+# ------------------------------------------------------------------------------
+# Byte-compiled / optimized / DLL files
+# ------------------------------------------------------------------------------
+__pycache__/
+*.py[cod]
+*$py.class
+*.so
+
+# ------------------------------------------------------------------------------
+# Distribution / packaging artifacts
+# ------------------------------------------------------------------------------
+build/
+develop-eggs/
+dist/
+downloads/
+eggs/
+.eggs/
+lib/
+lib64/
+parts/
+sdist/
+var/
+wheels/
+share/python-wheels/
+*.egg-info/
+.installed.cfg
+*.egg
+MANIFEST
+
+# ------------------------------------------------------------------------------
+# Virtual Environments & Package Managers
+# ------------------------------------------------------------------------------
+.venv/
+venv/
+ENV/
+env/
+env.bak/
+venv.bak/
+.uv/
+.python-version
+
+# ------------------------------------------------------------------------------
+# Environment Variables & Secrets
+# ------------------------------------------------------------------------------
+.env
+.env.*
+!.env.example
+*.pem
+*.key
+*.cert
+*.crt
+secrets.json
+
+# ------------------------------------------------------------------------------
+# Unit Tests, Code Coverage & Static Analysis
+# ------------------------------------------------------------------------------
+.pytest_cache/
+.tox/
+.nox/
+.coverage
+.coverage.*
+.cache
+nosetests.xml
+coverage.xml
+*.cover
+*.py,cover
+htmlcov/
+.hypothesis/
+.ruff_cache/
+.mypy_cache/
+.dmypy.json
+dmypy.json
+
+# ------------------------------------------------------------------------------
+# IDEs, Editors & Tooling
+# ------------------------------------------------------------------------------
+# JetBrains / PyCharm
+.idea/
+*.iws
+*.iml
+*.ipr
+out/
+
+# Visual Studio Code
+.vscode/
+!.vscode/settings.json
+!.vscode/tasks.json
+!.vscode/launch.json
+!.vscode/extensions.json
+*.code-workspace
+
+# Sublime Text
+*.sublime-workspace
+*.sublime-project
+
+# Vim / Emacs
+*~
+*.swp
+*.swo
+.#*
+\#*#
+
+# ------------------------------------------------------------------------------
+# Docker & Local Service Data Volumes
+# ------------------------------------------------------------------------------
+.docker/
+docker-compose.override.yml
+data/
+data/postgres/
+data/redis/
+
+# ------------------------------------------------------------------------------
+# Logs and Databases
+# ------------------------------------------------------------------------------
+*.log
+*.sqlite
+*.sqlite3
+logs/
+*.pid
+
+# ------------------------------------------------------------------------------
+# Operating System Artifacts
+# ------------------------------------------------------------------------------
+# macOS
+.DS_Store
+.AppleDouble
+.LSOverride
+._*
+.Spotlight-V100
+.Trashes
+
+# Windows
+Thumbs.db
+Thumbs.db:encryptable
+ehthumbs.db
+ehthumbs_vista.db
+*.stackdump
+[Dd]esktop.ini
+$RECYCLE.BIN/
+
+# Linux
+*~
+.directory
