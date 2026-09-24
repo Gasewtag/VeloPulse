@@ -32,3 +32,7 @@ def setup_logging(debug: bool = False) -> None:
         handler.setFormatter(formatter)
         uvicorn_logger.addHandler(handler)
         uvicorn_logger.propagate = False
+
+    # Quiet noisy internal 3rd-party connection/handshake debug messages
+    logging.getLogger("redis").setLevel(logging.INFO)
+    logging.getLogger("asyncpg").setLevel(logging.INFO)

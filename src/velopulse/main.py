@@ -4,19 +4,19 @@ import asyncio
 import logging
 from collections.abc import AsyncGenerator
 from contextlib import asynccontextmanager
-from datetime import datetime, timezone
+from datetime import UTC, datetime
 from typing import Any
 
+import redis.asyncio as aioredis
 from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
-import redis.asyncio as aioredis
 from sqlalchemy import text
-from sqlalchemy.ext.asyncio import create_async_engine
 
 from velopulse import __version__
 from velopulse.api.v1.router import api_router
 from velopulse.core.config import get_settings
 from velopulse.core.logging import setup_logging
+from velopulse.db.session import dispose_engine, engine
 
 settings = get_settings()
 setup_logging(debug=settings.DEBUG)
@@ -26,9 +26,12 @@ logger = logging.getLogger("velopulse.health")
 @asynccontextmanager
 async def lifespan(app: FastAPI) -> AsyncGenerator[None, None]:
     """Manage application startup and shutdown events."""
-    logger.info("Starting up VeloPulse application (v%s, env=%s)", __version__, settings.ENVIRONMENT)
+    logger.info(
+        "Starting up VeloPulse application (v%s, env=%s)", __version__, settings.ENVIRONMENT
+    )
     yield
     logger.info("Shutting down VeloPulse application")
+    await dispose_engine()
 
 
 def create_application() -> FastAPI:
@@ -55,19 +58,17 @@ def create_application() -> FastAPI:
     # Base Health Check Route
     @app.get("/health", tags=["Health"], summary="System health probe")
     async def health_check() -> dict[str, Any]:
-        timestamp = datetime.now(timezone.utc).isoformat()
+        timestamp = datetime.now(UTC).isoformat()
         checks: dict[str, str] = {
             "database": "unknown",
             "redis": "unknown",
         }
 
-        # 1. Probe PostgreSQL reachability
+        # 1. Probe PostgreSQL reachability using shared engine pool
         try:
-            db_engine = create_async_engine(settings.async_postgres_dsn)
             async with asyncio.timeout(2.0):
-                async with db_engine.connect() as conn:
+                async with engine.connect() as conn:
                     await conn.execute(text("SELECT 1"))
-            await db_engine.dispose()
             checks["database"] = "connected"
         except Exception as exc:
             logger.warning("Database probe failed: %s", exc)

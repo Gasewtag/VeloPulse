@@ -1,5 +1,3 @@
-version: "3.9"
-
 services:
   api:
     build:
@@ -17,16 +15,23 @@ services:
       retries: 3
       start_period: 10s
     environment:
+      - PYTHONPATH=/app/src
       - ENVIRONMENT=development
       - DEBUG=true
+      - SECRET_KEY=${SECRET_KEY}
       - POSTGRES_SERVER=postgres
       - POSTGRES_PORT=5432
-      - POSTGRES_USER=velopulse_user
-      - POSTGRES_PASSWORD=velopulse_password
-      - POSTGRES_DB=velopulse_db
+      - POSTGRES_USER=${POSTGRES_USER}
+      - POSTGRES_PASSWORD=${POSTGRES_PASSWORD}
+      - POSTGRES_DB=${POSTGRES_DB}
       - REDIS_URL=redis://redis:6379/0
+      - TELEGRAM_BOT_TOKEN=${TELEGRAM_BOT_TOKEN}
     volumes:
-      - ./src:/app/src:ro
+      - ./src:/app/src
+      - ./tests:/app/tests
+      - ./alembic:/app/alembic
+      - ./alembic.ini:/app/alembic.ini:ro
+      - ./pyproject.toml:/app/pyproject.toml:ro
     depends_on:
       postgres:
         condition: service_healthy
@@ -42,13 +47,13 @@ services:
     ports:
       - "5432:5432"
     environment:
-      - POSTGRES_USER=velopulse_user
-      - POSTGRES_PASSWORD=velopulse_password
-      - POSTGRES_DB=velopulse_db
+      - POSTGRES_USER=${POSTGRES_USER}
+      - POSTGRES_PASSWORD=${POSTGRES_PASSWORD}
+      - POSTGRES_DB=${POSTGRES_DB}
     volumes:
       - postgres_data:/var/lib/postgresql/data
     healthcheck:
-      test: ["CMD-SHELL", "pg_isready -U velopulse_user -d velopulse_db"]
+      test: ["CMD-SHELL", "pg_isready -U ${POSTGRES_USER} -d ${POSTGRES_DB}"]
       interval: 10s
       timeout: 5s
       retries: 5
