@@ -2,8 +2,8 @@
 
 import logging
 import time
+from datetime import UTC, datetime
 from urllib.parse import urlencode
-from datetime import datetime, timezone
 
 import httpx
 
@@ -122,7 +122,7 @@ class StravaClient:
     async def refresh_access_token(self, refresh_token: str) -> StravaRefreshTokenResponse:
         """Refresh expired access token using stored refresh token."""
         # Offline sandbox fallback
-        if self.settings.STRAVA_MOCK_MODE and refresh_token.startswith("mock_"):
+        if self.settings.STRAVA_MOCK_MODE:
             logger.info("Serving synthetic Strava token refresh for mock token")
             now = int(time.time())
             return StravaRefreshTokenResponse(
@@ -245,9 +245,9 @@ class StravaClient:
                 total_elevation_gain=250.0,
                 type="Ride",
                 sport_type="Ride",
-                start_date=datetime.now(timezone.utc),
+                start_date=datetime.now(UTC),
                 start_latlng=[37.7749, -122.4194],
-                gear_id="b1234567"
+                gear_id="b1234567",
             )
 
         headers = {"Authorization": f"Bearer {access_token}"}
@@ -262,4 +262,3 @@ class StravaClient:
                     response_body=response.text,
                 )
             return StravaActivityDetailed.model_validate(response.json())
-

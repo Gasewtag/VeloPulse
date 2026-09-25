@@ -1,9 +1,11 @@
 """Taskiq broker initialization and configuration."""
 
 import logging
-from redis.asyncio import Redis
+from typing import Any
+
 import taskiq_fastapi
-from taskiq import TaskiqMiddleware, TaskiqMessage, TaskiqResult
+from redis.asyncio import Redis
+from taskiq import TaskiqMessage, TaskiqMiddleware, TaskiqResult
 from taskiq_redis import ListQueueBroker, RedisAsyncResultBackend
 
 from velopulse.core.config import get_settings
@@ -17,7 +19,7 @@ class DLQMiddleware(TaskiqMiddleware):
 
     def __init__(self, redis_url: str):
         self.redis_url = redis_url
-        self.redis_client = None
+        self.redis_client: Redis | None = None
 
     async def startup(self) -> None:
         """Initialize Redis connection for DLQ."""
@@ -31,7 +33,7 @@ class DLQMiddleware(TaskiqMiddleware):
     async def on_error(
         self,
         message: TaskiqMessage,
-        result: TaskiqResult,
+        result: TaskiqResult[Any],
         exception: BaseException,
     ) -> None:
         """Push failed task payload to DLQ in Redis."""
@@ -47,15 +49,19 @@ class DLQMiddleware(TaskiqMiddleware):
 
 
 # Initialize result backend
-result_backend = RedisAsyncResultBackend(
+result_backend: RedisAsyncResultBackend[Any] = RedisAsyncResultBackend(
     redis_url=settings.REDIS_URL,
 )
 
 # Initialize the message broker using Redis with DLQ middleware
-broker = ListQueueBroker(
-    url=settings.REDIS_URL,
-).with_result_backend(result_backend).with_middlewares(DLQMiddleware(settings.REDIS_URL))
+broker = (
+    ListQueueBroker(
+        url=settings.REDIS_URL,
+        socket_timeout=None,
+    )
+    .with_result_backend(result_backend)
+    .with_middlewares(DLQMiddleware(settings.REDIS_URL))
+)
 
 # Initialize Taskiq for FastAPI to integrate dependency injection
 taskiq_fastapi.init(broker, "velopulse.main:app")
-

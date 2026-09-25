@@ -29,7 +29,10 @@ def test_authorization_url_generation(mock_settings: Settings) -> None:
     assert "https://www.strava.com/oauth/authorize" in url
     assert "client_id=123456" in url
     assert "response_type=code" in url
-    assert "scope=read%2Cactivity%3Aread_all%2Cprofile%3Aread_all" in url or "scope=read,activity:read_all,profile:read_all" in url
+    assert (
+        "scope=read%2Cactivity%3Aread_all%2Cprofile%3Aread_all" in url
+        or "scope=read,activity:read_all,profile:read_all" in url
+    )
     assert "state=csrf_abc_123" in url
 
 
@@ -84,7 +87,12 @@ async def test_exchange_code_live_mode_success() -> None:
                     "firstname": "Chris",
                     "lastname": "Froome",
                     "bikes": [
-                        {"id": "b999", "name": "Pinarello Dogma F", "primary": True, "distance": 500000.0}
+                        {
+                            "id": "b999",
+                            "name": "Pinarello Dogma F",
+                            "primary": True,
+                            "distance": 500000.0,
+                        }
                     ],
                 },
             },

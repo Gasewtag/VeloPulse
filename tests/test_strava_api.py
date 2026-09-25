@@ -1,14 +1,12 @@
 """Integration tests for Strava OAuth and Webhook API endpoints."""
 
-import json
 import time
+from unittest.mock import AsyncMock, patch
 
 import pytest
-import redis.asyncio as aioredis
 from httpx import AsyncClient
 
 from velopulse.core.config import get_settings
-from velopulse.services.strava.webhook import REDIS_WEBHOOK_QUEUE_KEY
 
 
 @pytest.mark.asyncio
@@ -106,7 +104,6 @@ async def test_strava_webhook_challenge_unsupported_mode(async_client: AsyncClie
 @pytest.mark.asyncio
 async def test_strava_webhook_event_ingestion_sub50ms(async_client: AsyncClient) -> None:
     """Verify webhook POST event returns HTTP 204 in <50ms and enqueues to Redis."""
-    settings = get_settings()
     payload = {
         "object_type": "activity",
         "object_id": 9988776655,
@@ -117,26 +114,16 @@ async def test_strava_webhook_event_ingestion_sub50ms(async_client: AsyncClient)
         "updates": {},
     }
 
-    # Warmup call to eliminate cold-start transport latency
-    await async_client.post("/api/v1/webhooks/strava", json=payload)
+    with patch(
+        "velopulse.tasks.activities.ingest_activity_task.kiq", new_callable=AsyncMock
+    ) as mock_kiq:
+        start = time.perf_counter()
+        response = await async_client.post("/api/v1/webhooks/strava", json=payload)
+        duration_ms = (time.perf_counter() - start) * 1000.0
 
-    start = time.perf_counter()
-    response = await async_client.post("/api/v1/webhooks/strava", json=payload)
-    duration_ms = (time.perf_counter() - start) * 1000.0
-
-    assert response.status_code == 204
-    assert duration_ms < 2000.0, f"Ingestion took {duration_ms:.2f}ms, exceeding 2s Strava SLA"
-
-    # Verify event was pushed to Redis queue
-    redis_client = aioredis.from_url(settings.REDIS_URL, decode_responses=True)
-    try:
-        queued_item = await redis_client.rpop(REDIS_WEBHOOK_QUEUE_KEY)
-        assert queued_item is not None
-        parsed = json.loads(queued_item)
-        assert parsed["object_id"] == 9988776655
-        assert parsed["aspect_type"] == "create"
-    finally:
-        await redis_client.aclose()
+        assert response.status_code == 204
+        assert duration_ms < 2000.0, f"Ingestion took {duration_ms:.2f}ms, exceeding 2s Strava SLA"
+        mock_kiq.assert_awaited_once_with(987654321, 9988776655)
 
 
 @pytest.mark.asyncio
