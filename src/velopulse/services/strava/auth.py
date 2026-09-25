@@ -21,6 +21,7 @@ class StravaAuthService:
 
     def __init__(self, client: StravaClient | None = None) -> None:
         self.client = client or StravaClient()
+        self.settings = self.client.settings
 
     async def authenticate_user(
         self,
@@ -113,7 +114,18 @@ class StravaAuthService:
         # Check if expired or within 5 minutes of expiring
         if now >= (user.token_expires_at - timedelta(minutes=5)):
             logger.info("Strava access token expired/expiring for user %s. Refreshing...", user.id)
-            plaintext_refresh = decrypt_token(user.refresh_token)
+            try:
+                plaintext_refresh = decrypt_token(user.refresh_token)
+            except ValueError:
+                # If legacy/unencrypted token exists in dev/mock environment, allow graceful fallback
+                if self.settings.STRAVA_MOCK_MODE or self.settings.ENVIRONMENT != "production":
+                    logger.warning(
+                        "Falling back to unencrypted refresh token in dev/mock mode for user %s",
+                        user.id,
+                    )
+                    plaintext_refresh = user.refresh_token
+                else:
+                    raise
             refreshed = await self.client.refresh_access_token(plaintext_refresh)
 
             user.access_token = refreshed.access_token

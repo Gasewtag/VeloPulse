@@ -122,7 +122,7 @@ class StravaClient:
     async def refresh_access_token(self, refresh_token: str) -> StravaRefreshTokenResponse:
         """Refresh expired access token using stored refresh token."""
         # Offline sandbox fallback
-        if self.settings.STRAVA_MOCK_MODE and refresh_token.startswith("mock_"):
+        if self.settings.STRAVA_MOCK_MODE:
             logger.info("Serving synthetic Strava token refresh for mock token")
             now = int(time.time())
             return StravaRefreshTokenResponse(

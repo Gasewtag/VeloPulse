@@ -8,6 +8,7 @@ import pytest
 from sqlalchemy import select
 from sqlalchemy.ext.asyncio import AsyncSession
 
+from velopulse.core.security import encrypt_token
 from velopulse.db.models.activity import Activity
 from velopulse.db.models.bike import Bike
 from velopulse.db.models.user import User
@@ -45,7 +46,7 @@ async def test_ingest_activity_task_success(
         strava_athlete_id=athlete_id,
         first_name="Test",
         access_token="token",
-        refresh_token="refresh",
+        refresh_token=encrypt_token("refresh"),
         token_expires_at=datetime.now(UTC),
     )
     db_session.add(user)
@@ -117,7 +118,7 @@ async def test_ingest_activity_task_duplicate(
         strava_athlete_id=athlete_id,
         first_name="Test",
         access_token="token",
-        refresh_token="refresh",
+        refresh_token=encrypt_token("refresh"),
         token_expires_at=datetime.now(UTC),
     )
     db_session.add(user)
