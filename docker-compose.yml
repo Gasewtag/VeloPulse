@@ -114,7 +114,7 @@ services:
       dockerfile: Dockerfile
     container_name: velopulse_worker
     restart: unless-stopped
-    command: ["taskiq", "worker", "velopulse.tasks.broker:broker", "velopulse.tasks.activities", "velopulse.tasks.weather"]
+    command: ["taskiq", "worker", "velopulse.tasks.broker:broker", "velopulse.tasks.activities", "velopulse.tasks.weather", "velopulse.tasks.wear"]
     healthcheck:
       disable: true
     environment:
