@@ -159,9 +159,12 @@ Sprint 09 [feat/09-observability-ci-cd]         ──► Prometheus metrics, he
   - Domain Event Dispatcher:
     * Emits `ComponentThresholdExceededEvent` when a component crosses 80%, 100%, or 120% wear.
 * **Definition of Done (DoD):**
-  - Mathematical calculation unit test suite validates exact wear points against benchmark reference tables across dry flat, rainy hilly, and muddy gravel test fixtures.
-  - Status transitions strictly adhere to the state machine rules defined in `ARCHITECTURE.md`.
-  - Database updates execute within a single atomic database transaction per activity.
+  - [x] Mathematical calculation unit test suite validates exact wear points against benchmark reference tables across dry flat, rainy hilly, and muddy gravel test fixtures.
+  - [x] Status transitions strictly adhere to the state machine rules defined in `ARCHITECTURE.md`.
+  - [x] Database updates execute within a single atomic database transaction per activity.
+  - [x] Seamless Taskiq background processing with Redis distributed lock and idempotency.
+  - [x] Pipeline handoff connected from weather enrichment to wear calculation.
+
 
 ---
 
