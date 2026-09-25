@@ -10,8 +10,18 @@ from velopulse.domain.strava import (
     StravaWebhookChallengeResponse,
     StravaWebhookEvent,
 )
+from velopulse.domain.weather import (
+    HourlyWeatherMetric,
+    OpenMeteoHourlyResponse,
+    OpenMeteoResponse,
+    SurfaceCondition,
+    WeatherEnrichmentResult,
+)
 
 __all__ = [
+    "HourlyWeatherMetric",
+    "OpenMeteoHourlyResponse",
+    "OpenMeteoResponse",
     "StravaAthleteSummary",
     "StravaGearSummary",
     "StravaRefreshTokenResponse",
@@ -20,4 +30,7 @@ __all__ = [
     "StravaWebhookChallenge",
     "StravaWebhookChallengeResponse",
     "StravaWebhookEvent",
+    "SurfaceCondition",
+    "WeatherEnrichmentResult",
 ]
+

@@ -54,6 +54,11 @@ class Settings(BaseSettings):
 
     # Open-Meteo Weather API
     OPEN_METEO_BASE_URL: str = "https://archive-api.open-meteo.com/v1/archive"
+    OPEN_METEO_FORECAST_URL: str = "https://api.open-meteo.com/v1/forecast"
+    WEATHER_CACHE_TTL_SECONDS: int = 604800  # 7 days
+
+    # Ngrok Tunnel
+    NGROK_DOMAIN: str = ""
 
     @property
     def async_postgres_dsn(self) -> str:
