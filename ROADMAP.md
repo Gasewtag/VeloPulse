@@ -135,9 +135,12 @@ Sprint 09 [feat/09-observability-ci-cd]         ──► Prometheus metrics, he
     * Updates `Activity` record with `is_weather_enriched = true` and detailed JSONB weather metrics.
   - Local caching layer in Redis for repeated geographic lookups within the same hour bucket.
 * **Definition of Done (DoD):**
-  - Historical rides ingested with GPS coordinates receive verified meteorological data from Open-Meteo.
-  - Weather conditions properly classify dry vs. rainy rides with simulated and real GPS datasets.
-  - Unit tests with mocked Open-Meteo responses achieve >90% coverage for the weather module.
+  - [x] Historical rides ingested with GPS coordinates receive verified meteorological data from Open-Meteo.
+  - [x] Weather conditions properly classify dry vs. rainy rides with simulated and real GPS datasets.
+  - [x] Unit tests with mocked Open-Meteo responses achieve >90% coverage for the weather module.
+  - [x] Geo-temporal Redis caching layer implemented with ~1.1km grid precision and 7-day TTL.
+  - [x] End-to-end Taskiq pipeline handoff from activity ingestion to weather enrichment.
+
 
 ---
 
