@@ -12,8 +12,6 @@ from velopulse.domain.strava import (
     StravaWebhookEvent,
 )
 
-from velopulse.tasks.activities import ingest_activity_task
-
 logger = logging.getLogger("velopulse.strava.webhook")
 
 
@@ -66,6 +64,8 @@ class StravaWebhookService:
         )
         if event.object_type == "activity" and event.aspect_type == "create":
             try:
+                from velopulse.tasks.activities import ingest_activity_task
+
                 await ingest_activity_task.kiq(event.owner_id, event.object_id)
             except Exception as exc:
                 logger.error("Failed to enqueue webhook event via Taskiq: %s", exc)
@@ -74,4 +74,3 @@ class StravaWebhookService:
                     status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
                     detail="Failed to enqueue webhook event",
                 ) from exc
-

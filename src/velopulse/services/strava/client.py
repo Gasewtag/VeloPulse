@@ -2,8 +2,8 @@
 
 import logging
 import time
+from datetime import UTC, datetime
 from urllib.parse import urlencode
-from datetime import datetime, timezone
 
 import httpx
 
@@ -245,9 +245,9 @@ class StravaClient:
                 total_elevation_gain=250.0,
                 type="Ride",
                 sport_type="Ride",
-                start_date=datetime.now(timezone.utc),
+                start_date=datetime.now(UTC),
                 start_latlng=[37.7749, -122.4194],
-                gear_id="b1234567"
+                gear_id="b1234567",
             )
 
         headers = {"Authorization": f"Bearer {access_token}"}
@@ -262,4 +262,3 @@ class StravaClient:
                     response_body=response.text,
                 )
             return StravaActivityDetailed.model_validate(response.json())
-

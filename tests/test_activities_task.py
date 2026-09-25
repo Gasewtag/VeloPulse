@@ -1,20 +1,22 @@
 """Tests for activity ingestion tasks."""
 
-from unittest.mock import AsyncMock, patch, MagicMock
+from collections.abc import Generator
+from datetime import UTC, datetime
+from unittest.mock import AsyncMock, MagicMock, patch
 
 import pytest
 from sqlalchemy import select
+from sqlalchemy.ext.asyncio import AsyncSession
 
 from velopulse.db.models.activity import Activity
 from velopulse.db.models.bike import Bike
 from velopulse.db.models.user import User
-from velopulse.tasks.activities import ingest_activity_task
 from velopulse.domain.strava import StravaActivityDetailed
-from datetime import datetime, UTC
+from velopulse.tasks.activities import ingest_activity_task
 
 
 @pytest.fixture
-def mock_redis():
+def mock_redis() -> Generator[MagicMock, None, None]:
     with patch("velopulse.tasks.activities.Redis") as mock_redis_cls:
         redis_instance = MagicMock()
         mock_redis_cls.from_url.return_value = redis_instance
@@ -22,16 +24,19 @@ def mock_redis():
         lock_mock = AsyncMock()
         lock_mock.__aenter__.return_value = lock_mock
         redis_instance.lock.return_value = lock_mock
-        
+
         # Make aclose an async mock
         redis_instance.aclose = AsyncMock()
         yield redis_instance
 
 
 @pytest.mark.asyncio
-async def test_ingest_activity_task_success(db_session, mock_redis):
+async def test_ingest_activity_task_success(
+    db_session: AsyncSession, mock_redis: MagicMock
+) -> None:
     """Test successful ingestion of a new activity."""
     import random
+
     athlete_id = random.randint(100000, 999999)
     activity_id = random.randint(100000, 999999)
 
@@ -59,33 +64,37 @@ async def test_ingest_activity_task_success(db_session, mock_redis):
     mock_session_local.return_value.__aenter__.return_value = db_session
     mock_session_local.return_value.__aexit__ = AsyncMock()
 
-    with patch("velopulse.tasks.activities.get_session_context", mock_session_local):
-        with patch("velopulse.tasks.activities.StravaAuthService") as mock_auth_cls:
-            auth_instance = AsyncMock()
-            auth_instance.get_valid_access_token.return_value = "valid_token"
-            mock_auth_cls.return_value = auth_instance
+    with (
+        patch("velopulse.tasks.activities.get_session_context", mock_session_local),
+        patch("velopulse.tasks.activities.StravaAuthService") as mock_auth_cls,
+        patch("velopulse.tasks.activities.StravaClient") as mock_client_cls,
+    ):
+        auth_instance = AsyncMock()
+        auth_instance.get_valid_access_token.return_value = "valid_token"
+        mock_auth_cls.return_value = auth_instance
 
-            with patch("velopulse.tasks.activities.StravaClient") as mock_client_cls:
-                client_instance = AsyncMock()
-                client_instance.get_activity.return_value = StravaActivityDetailed(
-                    id=activity_id,
-                    name="Morning Ride",
-                    distance=10000.0,
-                    moving_time=1800,
-                    total_elevation_gain=100.0,
-                    type="Ride",
-                    sport_type="Ride",
-                    start_date=datetime.now(UTC),
-                    start_latlng=[0.0, 0.0],
-                    gear_id=f"b_{athlete_id}"
-                )
-                mock_client_cls.return_value = client_instance
+        client_instance = AsyncMock()
+        client_instance.get_activity.return_value = StravaActivityDetailed(
+            id=activity_id,
+            name="Morning Ride",
+            distance=10000.0,
+            moving_time=1800,
+            total_elevation_gain=100.0,
+            type="Ride",
+            sport_type="Ride",
+            start_date=datetime.now(UTC),
+            start_latlng=[0.0, 0.0],
+            gear_id=f"b_{athlete_id}",
+        )
+        mock_client_cls.return_value = client_instance
 
-                # Run task directly (bypass taskiq broker for unit test)
-                await ingest_activity_task(athlete_id, activity_id)
+        # Run task directly (bypass taskiq broker for unit test)
+        await ingest_activity_task(athlete_id, activity_id)
 
     # Verify Activity was created
-    result = await db_session.execute(select(Activity).where(Activity.strava_activity_id == activity_id))
+    result = await db_session.execute(
+        select(Activity).where(Activity.strava_activity_id == activity_id)
+    )
     activity = result.scalar_one_or_none()
     assert activity is not None
     assert activity.name == "Morning Ride"
@@ -95,9 +104,12 @@ async def test_ingest_activity_task_success(db_session, mock_redis):
 
 
 @pytest.mark.asyncio
-async def test_ingest_activity_task_duplicate(db_session, mock_redis):
+async def test_ingest_activity_task_duplicate(
+    db_session: AsyncSession, mock_redis: MagicMock
+) -> None:
     """Test duplicate webhook events are safely ignored."""
     import random
+
     athlete_id = random.randint(100000, 999999)
     activity_id = random.randint(100000, 999999)
 
@@ -126,10 +138,10 @@ async def test_ingest_activity_task_duplicate(db_session, mock_redis):
     mock_session_local.return_value.__aenter__.return_value = db_session
     mock_session_local.return_value.__aexit__ = AsyncMock()
 
-    with patch("velopulse.tasks.activities.get_session_context", mock_session_local):
-        with patch("velopulse.tasks.activities.StravaClient") as mock_client_cls:
-            # Task should exit early before calling Strava API
-            await ingest_activity_task(athlete_id, activity_id)
-            mock_client_cls.return_value.get_activity.assert_not_called()
-
-
+    with (
+        patch("velopulse.tasks.activities.get_session_context", mock_session_local),
+        patch("velopulse.tasks.activities.StravaClient") as mock_client_cls,
+    ):
+        # Task should exit early before calling Strava API
+        await ingest_activity_task(athlete_id, activity_id)
+        mock_client_cls.return_value.get_activity.assert_not_called()

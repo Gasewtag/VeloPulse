@@ -144,4 +144,3 @@ class StravaActivityDetailed(BaseModel):
     start_date: datetime
     start_latlng: list[float] | None = None
     gear_id: str | None = None
-

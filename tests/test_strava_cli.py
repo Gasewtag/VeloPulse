@@ -1,5 +1,4 @@
-"""Tests for Strava CLI commands."""
-
+from datetime import UTC, datetime
 from unittest.mock import AsyncMock, patch
 
 import pytest
@@ -23,8 +22,8 @@ async def test_cmd_list_webhooks(capsys: pytest.CaptureFixture[str]) -> None:
         id=555,
         application_id=123,
         callback_url="https://example.com/api/v1/webhooks/strava",
-        created_at="2026-09-24T12:00:00Z",
-        updated_at="2026-09-24T12:00:00Z",
+        created_at=datetime(2026, 9, 24, 12, 0, 0, tzinfo=UTC),
+        updated_at=datetime(2026, 9, 24, 12, 0, 0, tzinfo=UTC),
     )
     with patch.object(client, "list_subscriptions", new_callable=AsyncMock) as mock_list:
         mock_list.return_value = [mock_sub]
@@ -43,8 +42,8 @@ async def test_cmd_register_webhook(capsys: pytest.CaptureFixture[str]) -> None:
         id=777,
         application_id=123,
         callback_url="https://example.com/api/v1/webhooks/strava",
-        created_at="2026-09-24T12:00:00Z",
-        updated_at="2026-09-24T12:00:00Z",
+        created_at=datetime(2026, 9, 24, 12, 0, 0, tzinfo=UTC),
+        updated_at=datetime(2026, 9, 24, 12, 0, 0, tzinfo=UTC),
     )
     with patch.object(client, "create_subscription", new_callable=AsyncMock) as mock_create:
         mock_create.return_value = mock_sub
@@ -90,8 +89,9 @@ async def test_cmd_simulate_event(capsys: pytest.CaptureFixture[str]) -> None:
 
 def test_cli_main_entrypoint() -> None:
     """Verify CLI parser parses subcommands."""
-    with patch("sys.argv", ["strava.py", "list-webhooks"]), patch(
-        "velopulse.cli.strava.cmd_list_webhooks", new_callable=AsyncMock
-    ) as mock_cmd:
+    with (
+        patch("sys.argv", ["strava.py", "list-webhooks"]),
+        patch("velopulse.cli.strava.cmd_list_webhooks", new_callable=AsyncMock) as mock_cmd,
+    ):
         main()
         mock_cmd.assert_called_once()
