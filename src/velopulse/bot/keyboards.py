@@ -371,3 +371,130 @@ def get_elevation_preset_keyboard(lang: str = "en") -> InlineKeyboardMarkup:
             [InlineKeyboardButton(text=t("btn_cancel", lang), callback_data="open:profile")],
         ]
     )
+
+
+def get_service_bikes_keyboard(
+    bikes: Sequence[Bike],
+    lang: str = "en",
+) -> InlineKeyboardMarkup:
+    """Keyboard for selecting a bike in the /service maintenance wizard."""
+    buttons: list[list[InlineKeyboardButton]] = []
+    for b in bikes:
+        buttons.append(
+            [
+                InlineKeyboardButton(
+                    text=t("bike_item_btn", lang, name=b.name),
+                    callback_data=f"service:bike:{b.id}",
+                )
+            ]
+        )
+    buttons.append(
+        [InlineKeyboardButton(text=t("btn_cancel", lang), callback_data="service:cancel")]
+    )
+    return InlineKeyboardMarkup(inline_keyboard=buttons)
+
+
+def get_service_components_keyboard(
+    components: Sequence[Component],
+    lang: str = "en",
+) -> InlineKeyboardMarkup:
+    """Keyboard for selecting a component in the /service wizard."""
+    buttons: list[list[InlineKeyboardButton]] = []
+    for comp in components:
+        buttons.append(
+            [
+                InlineKeyboardButton(
+                    text=f"{comp.brand_model} ({comp.component_type.value})",
+                    callback_data=f"service:comp:{comp.id}",
+                )
+            ]
+        )
+    buttons.append(
+        [InlineKeyboardButton(text=t("btn_cancel", lang), callback_data="service:cancel")]
+    )
+    return InlineKeyboardMarkup(inline_keyboard=buttons)
+
+
+def get_service_types_keyboard(lang: str = "en") -> InlineKeyboardMarkup:
+    """Keyboard for selecting the maintenance action type."""
+    return InlineKeyboardMarkup(
+        inline_keyboard=[
+            [
+                InlineKeyboardButton(
+                    text=t("btn_service_lube", lang),
+                    callback_data="service:type:clean_and_lube",
+                )
+            ],
+            [
+                InlineKeyboardButton(
+                    text=t("btn_service_inspect", lang),
+                    callback_data="service:type:inspect_tune",
+                )
+            ],
+            [
+                InlineKeyboardButton(
+                    text=t("btn_service_repair", lang),
+                    callback_data="service:type:repair",
+                )
+            ],
+            [
+                InlineKeyboardButton(
+                    text=t("btn_service_replace", lang),
+                    callback_data="service:type:replace",
+                )
+            ],
+            [
+                InlineKeyboardButton(
+                    text=t("btn_service_season", lang),
+                    callback_data="service:type:season_prep",
+                )
+            ],
+            [
+                InlineKeyboardButton(
+                    text=t("btn_cancel", lang),
+                    callback_data="service:cancel",
+                )
+            ],
+        ]
+    )
+
+
+def get_service_skip_notes_keyboard(lang: str = "en") -> InlineKeyboardMarkup:
+    """Keyboard allowing the user to skip entering technician notes."""
+    return InlineKeyboardMarkup(
+        inline_keyboard=[
+            [
+                InlineKeyboardButton(
+                    text=t("btn_skip_notes", lang),
+                    callback_data="service:skip_notes",
+                )
+            ],
+            [
+                InlineKeyboardButton(
+                    text=t("btn_cancel", lang),
+                    callback_data="service:cancel",
+                )
+            ],
+        ]
+    )
+
+
+def get_service_skip_cost_keyboard(lang: str = "en") -> InlineKeyboardMarkup:
+    """Keyboard allowing the user to skip cost (free / 0.00)."""
+    return InlineKeyboardMarkup(
+        inline_keyboard=[
+            [
+                InlineKeyboardButton(
+                    text=t("btn_skip_cost", lang),
+                    callback_data="service:skip_cost",
+                )
+            ],
+            [
+                InlineKeyboardButton(
+                    text=t("btn_cancel", lang),
+                    callback_data="service:cancel",
+                )
+            ],
+        ]
+    )
+
