@@ -92,6 +92,5 @@ async def enrich_weather_task(activity_id: str | uuid.UUID) -> None:
                         "calculate_wear_task is not yet registered (Sprint 06 deliverable)"
                     )
 
-
         finally:
             await redis_client.aclose()

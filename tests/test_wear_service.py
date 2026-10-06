@@ -12,7 +12,9 @@ from velopulse.services.wear.service import WearCalculationService
 def test_calculate_elevation_factor_flat() -> None:
     """Verify flat ride results in baseline Ef=1.00."""
     service = WearCalculationService()
-    ef = service.calculate_elevation_factor(distance_km=50.0, elevation_gain_m=0.0, bike_type=BikeType.ROAD)
+    ef = service.calculate_elevation_factor(
+        distance_km=50.0, elevation_gain_m=0.0, bike_type=BikeType.ROAD
+    )
     assert ef == 1.00
 
 
@@ -48,16 +50,31 @@ def test_calculate_component_coefficients() -> None:
     service = WearCalculationService()
 
     # Dry flat baseline (Wm=1.0, Ef=1.0) -> all Cm should be 1.0 (except rear tire which is 1.25)
-    assert service.calculate_component_coefficient(ComponentType.CHAIN, "Shimano HG-701", 1.0, 1.0) == 1.0
-    assert service.calculate_component_coefficient(ComponentType.CASSETTE, "Shimano Ultegra", 1.0, 1.0) == 1.0
+    assert (
+        service.calculate_component_coefficient(ComponentType.CHAIN, "Shimano HG-701", 1.0, 1.0)
+        == 1.0
+    )
+    assert (
+        service.calculate_component_coefficient(ComponentType.CASSETTE, "Shimano Ultegra", 1.0, 1.0)
+        == 1.0
+    )
     assert service.calculate_component_coefficient(ComponentType.CABLES, "Jagwire", 1.0, 1.0) == 1.0
-    assert service.calculate_component_coefficient(ComponentType.REAR_TIRE, "Continental GP5000", 1.0, 1.0) == 1.25
+    assert (
+        service.calculate_component_coefficient(
+            ComponentType.REAR_TIRE, "Continental GP5000", 1.0, 1.0
+        )
+        == 1.25
+    )
 
     # Wet rain ride (Wm=2.0, Ef=1.2)
     # Resin pads: Wm^1.2 = 2.0^1.2 ≈ 2.297
-    cm_resin = service.calculate_component_coefficient(ComponentType.FRONT_BRAKE_PAD, "Shimano L05A Resin", 2.0, 1.2)
+    cm_resin = service.calculate_component_coefficient(
+        ComponentType.FRONT_BRAKE_PAD, "Shimano L05A Resin", 2.0, 1.2
+    )
     # Sintered pads: Wm^0.8 = 2.0^0.8 ≈ 1.741
-    cm_metal = service.calculate_component_coefficient(ComponentType.FRONT_BRAKE_PAD, "Shimano Metallic Sintered", 2.0, 1.2)
+    cm_metal = service.calculate_component_coefficient(
+        ComponentType.FRONT_BRAKE_PAD, "Shimano Metallic Sintered", 2.0, 1.2
+    )
     assert cm_resin > cm_metal
     assert round(cm_resin, 1) == 2.3
     assert round(cm_metal, 1) == 1.7
@@ -69,7 +86,9 @@ def test_evaluate_component_status_lifecycle() -> None:
     lifespan = 3000.0
 
     # 0% wear, was NEW -> remains NEW
-    assert service.evaluate_component_status(0.0, lifespan, ComponentStatus.NEW) == ComponentStatus.NEW
+    assert (
+        service.evaluate_component_status(0.0, lifespan, ComponentStatus.NEW) == ComponentStatus.NEW
+    )
 
     # 10% wear -> OPTIMAL (<60%)
     assert service.evaluate_component_status(300.0, lifespan) == ComponentStatus.OPTIMAL
@@ -81,7 +100,9 @@ def test_evaluate_component_status_lifecycle() -> None:
     assert service.evaluate_component_status(1950.0, lifespan) == ComponentStatus.ATTENTION_NEEDED
 
     # 90% wear -> REPLACE_RECOMMENDED (85% <= wear < 100%)
-    assert service.evaluate_component_status(2700.0, lifespan) == ComponentStatus.REPLACE_RECOMMENDED
+    assert (
+        service.evaluate_component_status(2700.0, lifespan) == ComponentStatus.REPLACE_RECOMMENDED
+    )
 
     # 105% wear -> RETIRED (>= 100%)
     assert service.evaluate_component_status(3150.0, lifespan) == ComponentStatus.RETIRED

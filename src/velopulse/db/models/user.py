@@ -27,10 +27,10 @@ class User(Base):
         default=uuid.uuid4,
         server_default=func.gen_random_uuid(),
     )
-    strava_athlete_id: Mapped[int] = mapped_column(
+    strava_athlete_id: Mapped[int | None] = mapped_column(
         BigInteger,
         unique=True,
-        nullable=False,
+        nullable=True,
     )
     telegram_chat_id: Mapped[int | None] = mapped_column(
         BigInteger,
@@ -45,17 +45,17 @@ class User(Base):
         String(100),
         nullable=True,
     )
-    access_token: Mapped[str] = mapped_column(
+    access_token: Mapped[str | None] = mapped_column(
         Text,
-        nullable=False,
+        nullable=True,
     )
-    refresh_token: Mapped[str] = mapped_column(
+    refresh_token: Mapped[str | None] = mapped_column(
         Text,
-        nullable=False,
+        nullable=True,
     )
-    token_expires_at: Mapped[datetime] = mapped_column(
+    token_expires_at: Mapped[datetime | None] = mapped_column(
         DateTime(timezone=True),
-        nullable=False,
+        nullable=True,
     )
     settings: Mapped[dict[str, Any]] = mapped_column(
         JSONB,

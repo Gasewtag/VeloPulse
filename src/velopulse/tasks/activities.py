@@ -115,11 +115,13 @@ async def ingest_activity_task(strava_athlete_id: int, strava_activity_id: int) 
                 # 7. Enqueue weather telemetry enrichment
                 try:
                     from velopulse.tasks.weather import enrich_weather_task
+
                     await enrich_weather_task.kiq(str(new_activity.id))
                     logger.info(f"Enqueued enrich_weather_task for activity {new_activity.id}")
                 except Exception as exc:
-                    logger.error(f"Failed to enqueue enrich_weather_task for activity {new_activity.id}: {exc}")
-
+                    logger.error(
+                        f"Failed to enqueue enrich_weather_task for activity {new_activity.id}: {exc}"
+                    )
 
         finally:
             await redis_client.aclose()

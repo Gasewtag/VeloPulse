@@ -33,9 +33,7 @@ def mock_redis() -> Generator[MagicMock, None, None]:
 
 
 @pytest.mark.asyncio
-async def test_calculate_wear_task_success(
-    db_session: AsyncSession, mock_redis: MagicMock
-) -> None:
+async def test_calculate_wear_task_success(db_session: AsyncSession, mock_redis: MagicMock) -> None:
     """Verify calculate_wear_task attributes wear and updates components and bike mileage."""
     athlete_id = random.randint(100000, 999999)
     act_id = random.randint(100000, 999999)
@@ -209,9 +207,7 @@ async def test_calculate_wear_task_idempotency(
 
 
 @pytest.mark.asyncio
-async def test_calculate_wear_task_no_bike(
-    db_session: AsyncSession, mock_redis: MagicMock
-) -> None:
+async def test_calculate_wear_task_no_bike(db_session: AsyncSession, mock_redis: MagicMock) -> None:
     """Verify task gracefully exits if activity has no bike associated."""
     athlete_id = random.randint(100000, 999999)
     act_id = random.randint(100000, 999999)

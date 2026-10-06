@@ -40,9 +40,7 @@ class OpenMeteoClient:
     ) -> None:
         self.settings = settings or get_settings()
         self._http_client = http_client
-        self.mock_mode = (
-            mock_mode if mock_mode is not None else self.settings.STRAVA_MOCK_MODE
-        )
+        self.mock_mode = mock_mode if mock_mode is not None else self.settings.STRAVA_MOCK_MODE
 
     async def get_hourly_weather(
         self,
@@ -109,9 +107,7 @@ class OpenMeteoClient:
                 )
 
             if response.is_error:
-                logger.error(
-                    f"Open-Meteo HTTP {response.status_code} error: {response.text}"
-                )
+                logger.error(f"Open-Meteo HTTP {response.status_code} error: {response.text}")
                 raise OpenMeteoAPIError(
                     f"Open-Meteo returned status {response.status_code}: {response.text}",
                     status_code=response.status_code,

@@ -177,9 +177,7 @@ class WearCalculationService:
             prev_wear = float(comp.current_wear_points)
             lifespan = float(comp.lifespan_wear_points)
 
-            cm = self.calculate_component_coefficient(
-                comp.component_type, comp.brand_model, wm, ef
-            )
+            cm = self.calculate_component_coefficient(comp.component_type, comp.brand_model, wm, ef)
             delta_wp = self.calculate_wear_delta(dist_km, ef, wm, cm)
             new_wear = round(prev_wear + delta_wp, 2)
 
