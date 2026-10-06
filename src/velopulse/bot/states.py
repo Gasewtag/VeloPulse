@@ -56,3 +56,14 @@ class SettingsStates(StatesGroup):
     """States for settings and account management."""
 
     confirming_delete_account = State()
+
+
+class ServiceStates(StatesGroup):
+    """States for maintenance service logging wizard."""
+
+    selecting_bike = State()
+    selecting_component = State()
+    selecting_service_type = State()
+    entering_notes = State()
+    entering_cost = State()
+

@@ -713,7 +713,8 @@ async def finalize_bike_creation(
         bike_type=b_type_str.upper(),
     )
     full_text = f"{conf_msg}\n\n{manage_title}"
-    kb = get_bike_manage_keyboard(saved_bike, saved_bike.components, lang)
+    active_comps = [c for c in saved_bike.components if c.retired_at is None]
+    kb = get_bike_manage_keyboard(saved_bike, active_comps, lang)
 
     if isinstance(event, CallbackQuery) and isinstance(event.message, Message):
         await event.message.edit_text(full_text, reply_markup=kb)
@@ -754,7 +755,8 @@ async def handle_bike_manage_menu(query: CallbackQuery, state: FSMContext) -> No
             bike.bike_type.value if hasattr(bike.bike_type, "value") else str(bike.bike_type)
         )
         title = t("bike_manage_title", lang, name=bike.name, bike_type=b_type_str.upper())
-        kb = get_bike_manage_keyboard(bike, bike.components, lang)
+        active_components = [c for c in bike.components if c.retired_at is None]
+        kb = get_bike_manage_keyboard(bike, active_components, lang)
 
     try:
         await query.message.edit_text(title, reply_markup=kb)

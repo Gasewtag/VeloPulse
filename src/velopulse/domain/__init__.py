@@ -1,5 +1,10 @@
 """Domain models, entities, and enums."""
 
+from velopulse.domain.maintenance import (
+    BikeMaintenanceHistory,
+    ComponentReplacementResult,
+    MaintenanceLogEntry,
+)
 from velopulse.domain.strava import (
     StravaAthleteSummary,
     StravaGearSummary,
@@ -25,8 +30,11 @@ from velopulse.domain.weather import (
 
 __all__ = [
     "ActivityWearCalculationResult",
+    "BikeMaintenanceHistory",
+    "ComponentReplacementResult",
     "ComponentWearDelta",
     "HourlyWeatherMetric",
+    "MaintenanceLogEntry",
     "OpenMeteoHourlyResponse",
     "OpenMeteoResponse",
     "StravaAthleteSummary",

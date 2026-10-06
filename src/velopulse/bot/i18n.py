@@ -185,6 +185,41 @@ MESSAGES: dict[str, dict[str, str]] = {
         "chat_cleaned": "Chat history cleaned. 🧹",
         # Unexpected message fallback
         "unexpected_action": "Please use the buttons below to proceed.",
+        # Maintenance Service Wizard
+        "service_start": "🔧 <b>Maintenance Service Logging</b>\n\nSelect a bicycle to log maintenance:",
+        "service_no_bikes": "You don't have any registered bicycles yet. Add a bike first to log maintenance.",
+        "service_select_component": "Select the component you serviced on <b>{bike_name}</b>:",
+        "service_no_components": "No active components found on this bike.",
+        "service_select_type": "Select the type of maintenance performed on <b>{component_name}</b>:",
+        "service_enter_notes": "📝 Enter technician notes or service description (or tap Skip):",
+        "service_enter_cost": "💰 Enter the cost in your currency (e.g. <code>25.50</code>, or tap Free):",
+        "service_invalid_cost": "⚠️ Invalid amount. Please enter a positive number (e.g. <code>15.00</code>) or tap Free:",
+        "service_success": (
+            "✅ <b>Maintenance Logged Successfully!</b>\n\n"
+            "🚲 <b>Bike:</b> {bike_name}\n"
+            "🔩 <b>Component:</b> {component_name}\n"
+            "🔧 <b>Action:</b> {action}\n"
+            "📝 <b>Notes:</b> {notes}\n"
+            "💰 <b>Cost:</b> {cost}\n"
+            "⏱️ <b>Odometer:</b> {odometer_km} km"
+        ),
+        "service_replace_success": (
+            "🔄 <b>Component Replaced & Reset!</b>\n\n"
+            "🚲 <b>Bike:</b> {bike_name}\n"
+            "🔩 <b>Old part retired:</b> {old_name}\n"
+            "🆕 <b>New part installed:</b> {new_name}\n"
+            "📊 <b>Wear:</b> Reset to 0.00 WP\n"
+            "💰 <b>Cost:</b> {cost}"
+        ),
+        "service_cancelled": "❌ Maintenance logging cancelled.",
+        "btn_service_lube": "🧼 Clean & Lube",
+        "btn_service_inspect": "🔧 Inspect & Tune",
+        "btn_service_repair": "🛠️ Repair",
+        "btn_service_replace": "🔄 Replace Part",
+        "btn_service_season": "📅 Season Prep",
+        "btn_skip_notes": "⏭️ Skip notes",
+        "btn_skip_cost": "0 💵 (Free / No cost)",
+        "service_notes_skipped": "None",
     },
     "ru": {
         # Start & Language
@@ -367,6 +402,41 @@ MESSAGES: dict[str, dict[str, str]] = {
         "chat_cleaned": "История чата очищена. 🧹",
         # Unexpected message fallback
         "unexpected_action": "Пожалуйста, используйте кнопки ниже для продолжения.",
+        # Maintenance Service Wizard
+        "service_start": "🔧 <b>Журнал технического обслуживания</b>\n\nВыберите велосипед для регистрации обслуживания:",
+        "service_no_bikes": "У вас пока нет зарегистрированных велосипедов. Сначала добавьте велосипед.",
+        "service_select_component": "Выберите обслуженный компонент на <b>{bike_name}</b>:",
+        "service_no_components": "На этом велосипеде не найдено активных компонентов.",
+        "service_select_type": "Выберите тип выполненного обслуживания для <b>{component_name}</b>:",
+        "service_enter_notes": "📝 Введите заметки или описание работ (или нажмите Пропустить):",
+        "service_enter_cost": "💰 Введите стоимость обслуживания (например <code>25.50</code>, или нажмите Бесплатно):",
+        "service_invalid_cost": "⚠️ Некорректная сумма. Пожалуйста, введите положительное число (например <code>15.00</code>) или нажмите Бесплатно:",
+        "service_success": (
+            "✅ <b>Обслуживание успешно записано!</b>\n\n"
+            "🚲 <b>Велосипед:</b> {bike_name}\n"
+            "🔩 <b>Компонент:</b> {component_name}\n"
+            "🔧 <b>Действие:</b> {action}\n"
+            "📝 <b>Заметки:</b> {notes}\n"
+            "💰 <b>Стоимость:</b> {cost}\n"
+            "⏱️ <b>Одометр:</b> {odometer_km} км"
+        ),
+        "service_replace_success": (
+            "🔄 <b>Компонент заменен и сброшен!</b>\n\n"
+            "🚲 <b>Велосипед:</b> {bike_name}\n"
+            "🔩 <b>Старая деталь отправлена в архив:</b> {old_name}\n"
+            "🆕 <b>Новая деталь установлена:</b> {new_name}\n"
+            "📊 <b>Износ:</b> Сброшен на 0.00 WP\n"
+            "💰 <b>Стоимость:</b> {cost}"
+        ),
+        "service_cancelled": "❌ Регистрация обслуживания отменена.",
+        "btn_service_lube": "🧼 Чистка и смазка",
+        "btn_service_inspect": "🔧 Осмотр и настройка",
+        "btn_service_repair": "🛠️ Ремонт",
+        "btn_service_replace": "🔄 Замена детали",
+        "btn_service_season": "📅 Подготовка к сезону",
+        "btn_skip_notes": "⏭️ Пропустить заметки",
+        "btn_skip_cost": "0 💵 (Бесплатно)",
+        "service_notes_skipped": "Нет",
     },
 }
 

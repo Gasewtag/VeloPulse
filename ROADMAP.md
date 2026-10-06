@@ -211,9 +211,9 @@ Sprint 09 [feat/09-observability-ci-cd]         ──► Prometheus metrics, he
   - Historical reporting endpoint:
     * `GET /api/v1/bikes/{bike_id}/maintenance`: Returns comprehensive maintenance timeline with accumulated odometer and cost tracking.
 * **Definition of Done (DoD):**
-  - Full component replacement workflow resets wear to 0.00 while preserving historical wear records.
-  - FSM wizard in Telegram handles user cancellation, validation errors, and completes log entry creation.
-  - API endpoints verified with full test coverage and OpenAPI documentation.
+  - [x] Full component replacement workflow resets wear to 0.00 while preserving historical wear records.
+  - [x] FSM wizard in Telegram handles user cancellation, validation errors, and completes log entry creation.
+  - [x] API endpoints verified with full test coverage and OpenAPI documentation.
 
 ---
 
