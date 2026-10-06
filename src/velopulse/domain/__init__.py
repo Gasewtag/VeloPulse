@@ -41,5 +41,3 @@ __all__ = [
     "WearThresholdExceededEvent",
     "WeatherEnrichmentResult",
 ]
-
-

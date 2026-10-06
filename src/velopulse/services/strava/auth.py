@@ -110,12 +110,19 @@ class StravaAuthService:
         session: AsyncSession,
     ) -> str:
         """Retrieve valid Strava access token, refreshing if within 5-minute expiry threshold."""
+        if not user.access_token or not user.refresh_token or not user.token_expires_at:
+            raise ValueError(f"User {user.id} has no valid Strava credentials configured.")
+
+        token_expires_at = user.token_expires_at
+        refresh_token = user.refresh_token
+        access_token = user.access_token
+
         now = datetime.now(UTC)
         # Check if expired or within 5 minutes of expiring
-        if now >= (user.token_expires_at - timedelta(minutes=5)):
+        if now >= (token_expires_at - timedelta(minutes=5)):
             logger.info("Strava access token expired/expiring for user %s. Refreshing...", user.id)
             try:
-                plaintext_refresh = decrypt_token(user.refresh_token)
+                plaintext_refresh = decrypt_token(refresh_token)
             except ValueError:
                 # If legacy/unencrypted token exists in dev/mock environment, allow graceful fallback
                 if self.settings.STRAVA_MOCK_MODE or self.settings.ENVIRONMENT != "production":
@@ -123,7 +130,7 @@ class StravaAuthService:
                         "Falling back to unencrypted refresh token in dev/mock mode for user %s",
                         user.id,
                     )
-                    plaintext_refresh = user.refresh_token
+                    plaintext_refresh = refresh_token
                 else:
                     raise
             refreshed = await self.client.refresh_access_token(plaintext_refresh)
@@ -135,4 +142,4 @@ class StravaAuthService:
             await session.commit()
             return user.access_token
 
-        return user.access_token
+        return access_token

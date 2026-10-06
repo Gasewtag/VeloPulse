@@ -98,15 +98,16 @@ class WeatherEnrichmentService:
             min_date = min(h.date() for h in missing_hours)
             max_date = max(h.date() for h in missing_hours)
             try:
-                open_meteo_resp = await self.client.get_hourly_weather(
-                    lat, lng, min_date, max_date
-                )
+                open_meteo_resp = await self.client.get_hourly_weather(lat, lng, min_date, max_date)
                 fetched_metrics = open_meteo_resp.to_hourly_metrics()
                 # Store in cache
                 await self.cache.set_hourly_metrics(lat, lng, fetched_metrics)
 
                 # Match missing hours
-                fetched_map = {m.time.replace(minute=0, second=0, microsecond=0, tzinfo=UTC): m for m in fetched_metrics}
+                fetched_map = {
+                    m.time.replace(minute=0, second=0, microsecond=0, tzinfo=UTC): m
+                    for m in fetched_metrics
+                }
                 for h in missing_hours:
                     h_utc = h.astimezone(UTC)
                     if h_utc in fetched_map:
@@ -157,7 +158,9 @@ class WeatherEnrichmentService:
         beta_wet = 0.4
         temp_penalty = 0.2 if avg_temp < 0.0 else 0.0
 
-        raw_multiplier = 1.0 + (beta_rain * max_hourly_precip) + (beta_wet * surface_wetness) + temp_penalty
+        raw_multiplier = (
+            1.0 + (beta_rain * max_hourly_precip) + (beta_wet * surface_wetness) + temp_penalty
+        )
 
         # Category minimum floor calibration:
         # Dry: 1.0x, Damp: 1.3x - 1.5x, Wet Rain: 1.8x - 2.2x, Mud / Slurry: 2.5x - 3.5x

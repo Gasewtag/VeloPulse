@@ -45,7 +45,9 @@ async def calculate_wear_task(activity_id: str | uuid.UUID) -> None:
                     return
 
                 if not activity.bike_id:
-                    logger.info("Activity %s has no bike assigned. Skipping wear calculation.", act_uuid)
+                    logger.info(
+                        "Activity %s has no bike assigned. Skipping wear calculation.", act_uuid
+                    )
                     return
 
                 # 2. Idempotency Check: verify if wear attributions already exist
@@ -54,7 +56,10 @@ async def calculate_wear_task(activity_id: str | uuid.UUID) -> None:
                 )
                 existing = await session.execute(check_stmt)
                 if existing.first() is not None:
-                    logger.info("Wear attribution records already exist for activity %s. Skipping.", act_uuid)
+                    logger.info(
+                        "Wear attribution records already exist for activity %s. Skipping.",
+                        act_uuid,
+                    )
                     return
 
                 # 3. Fetch Bike and Active Components
@@ -132,7 +137,9 @@ async def calculate_wear_task(activity_id: str | uuid.UUID) -> None:
                         notify_mod = importlib.import_module("velopulse.tasks.notifications")
                         dispatch_notifications_task = notify_mod.dispatch_notifications_task
                         await dispatch_notifications_task.kiq(str(act_uuid))
-                        logger.info("Enqueued dispatch_notifications_task for activity %s", act_uuid)
+                        logger.info(
+                            "Enqueued dispatch_notifications_task for activity %s", act_uuid
+                        )
                     except (ImportError, AttributeError):
                         logger.debug(
                             "dispatch_notifications_task is not yet registered (Sprint 07 deliverable)"

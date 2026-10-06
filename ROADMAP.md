@@ -170,22 +170,32 @@ Sprint 09 [feat/09-observability-ci-cd]         ──► Prometheus metrics, he
 
 ## Sprint 07: Decoupled Notification Dispatcher & Telegram Bot Interface
 * **Branch:** `feat/07-telegram-bot-notifications`
-* **Objective:** Deploy an interactive Telegram bot using `aiogram 3.x` to alert cyclists of component wear and facilitate instant maintenance logging.
+* **Objective:** Deploy an interactive Telegram bot using `aiogram 3.x` to alert cyclists of component wear, manage bicycles and components, and facilitate instant maintenance logging.
 * **Key Deliverables:**
   - Asynchronous Telegram Bot service using `aiogram 3.x`:
-    * Deep-linking account onboarding: `/start {token}` links Telegram chat ID to VeloPulse user account.
-    * Status inspection commands: `/status`, `/bikes`, `/components`.
-  - Decoupled Notification Dispatcher:
+    * Multi-language support (🇬🇧 English & 🇷🇺 Russian) stored in user settings.
+    * `/start` onboarding without greetings, prompting language selection and requiring initial profile setup (`👤 Profile`).
+    * Dynamic personalized greetings using user's Telegram first name.
+    * Main Profile Menu: `🔗 Strava`, `🚲 Bikes`, `⚙️ Settings`.
+    * Bike list view enforcing strict 3-bike maximum limit.
+    * Multi-step FSM Bike Creation Wizard (Type -> Model -> Cassette -> Chain -> Front Tire -> Rear Tire -> Front Brake -> Rear Brake -> MTB Suspension).
+    * Component inspection cockpit with 10-character Unicode progress bars (`████████░░ 80%`), maintenance health badges, and chain lubrication countdowns.
+    * Component replacement flow resetting wear to 0 km and recording `MaintenanceLog` entries.
+    * Delete bike confirmation flow.
+    * Two-step account deletion confirmation with cascading data cleanup and localized farewell message.
+  - Decoupled Notification Dispatcher (`NotificationDispatcher`):
     * Consumes `ComponentThresholdExceededEvent`.
-    * Generates rich formatted Telegram alert cards with wear progression bars:
-      `[████████░░] 82% - Chain on Trek Checkpoint needs cleaning & lubrication`.
+    * Generates rich formatted Telegram alert cards with wear progression bars.
     * Attaches actionable inline keyboards: `[✅ Clean & Lube]`, `[🔄 Replace Part]`, `[⏸️ Snooze]`.
-  - Callback query handlers:
-    * Intercepts button clicks, acknowledges Telegram callback, and schedules maintenance updates.
+    * 7-day anti-fatigue cooldown filter via Redis.
+  - Interactive callback query handlers and fallback handlers preserving user FSM state on free-form input.
 * **Definition of Done (DoD):**
-  - Users can link their Telegram accounts seamlessly via `/start` deeplink.
-  - Simulated wear threshold event delivers an immediate interactive push notification with inline buttons.
-  - Clicking `[✅ Clean & Lube]` successfully updates component state and updates the Telegram message in-place.
+  - [x] Users can select and persist language (EN/RU) and receive all bot messages in their selected language.
+  - [x] Plain and deep-linked `/start` commands guide users to language selection and profile setup.
+  - [x] Multi-step bike creation wizard persists bikes and individual components in PostgreSQL.
+  - [x] Component replacement resets wear to 0.00 and logs maintenance events.
+  - [x] Account deletion permanently wipes profile and associated equipment.
+  - [x] 100% test pass rate across 100 unit and integration tests inside Docker container.
 
 ---
 
