@@ -1,0 +1,32 @@
+{
+    email {$ACME_EMAIL:admin@velopulse.internal}
+    admin off
+}
+
+{$DOMAIN_NAME:localhost} {
+    encode gzip zstd
+
+    # Strict Production Security Headers
+    header {
+        Strict-Transport-Security "max-age=31536000; includeSubDomains; preload"
+        X-Content-Type-Options "nosniff"
+        X-Frame-Options "DENY"
+        X-XSS-Protection "1; mode=block"
+        Referrer-Policy "strict-origin-when-cross-origin"
+        Permissions-Policy "accelerometer=(), camera=(), geolocation=(), gyroscope=(), magnetometer=(), microphone=(), payment=(), usb=()"
+    }
+
+    # Restrict Prometheus telemetry scraping to private/internal networks
+    @external_metrics {
+        path /metrics
+        not remote_ip 10.0.0.0/8 172.16.0.0/12 192.168.0.0/16 127.0.0.1
+    }
+    respond @external_metrics "Forbidden" 403
+
+    # Reverse proxy all incoming traffic to VeloPulse API Gateway
+    reverse_proxy api:8000 {
+        header_up X-Real-IP {remote_host}
+        header_up X-Forwarded-For {remote_host}
+        header_up X-Forwarded-Proto {scheme}
+    }
+}

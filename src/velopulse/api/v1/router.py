@@ -11,4 +11,3 @@ api_router = APIRouter()
 api_router.include_router(auth_router, prefix="/auth", tags=["Authentication"])
 api_router.include_router(bikes_router, prefix="/bikes", tags=["Bicycles & Maintenance"])
 api_router.include_router(webhooks_router, prefix="/webhooks", tags=["Webhooks"])
-

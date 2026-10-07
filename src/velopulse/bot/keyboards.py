@@ -497,4 +497,3 @@ def get_service_skip_cost_keyboard(lang: str = "en") -> InlineKeyboardMarkup:
             ],
         ]
     )
-

@@ -66,4 +66,3 @@ class ServiceStates(StatesGroup):
     selecting_service_type = State()
     entering_notes = State()
     entering_cost = State()
-

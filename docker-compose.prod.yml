@@ -1,0 +1,180 @@
+# ==============================================================================
+# Production Docker Compose Deployment Manifest for VeloPulse
+# ==============================================================================
+
+services:
+  caddy:
+    image: caddy:2-alpine
+    container_name: velopulse_prod_caddy
+    restart: always
+    ports:
+      - "80:80"
+      - "443:443"
+    environment:
+      - DOMAIN_NAME=${DOMAIN_NAME:-localhost}
+      - ACME_EMAIL=${ACME_EMAIL:-admin@velopulse.internal}
+    volumes:
+      - ./Caddyfile:/etc/caddy/Caddyfile:ro
+      - caddy_data:/data
+      - caddy_config:/config
+    depends_on:
+      api:
+        condition: service_healthy
+    networks:
+      - velopulse_prod_net
+
+  api:
+    build:
+      context: .
+      dockerfile: Dockerfile.prod
+    container_name: velopulse_prod_api
+    restart: always
+    expose:
+      - "8000"
+    environment:
+      - ENVIRONMENT=production
+      - DEBUG=false
+      - LOG_FORMAT=json
+      - PROMETHEUS_ENABLED=true
+      - SECRET_KEY=${SECRET_KEY}
+      - ENCRYPTION_KEY=${ENCRYPTION_KEY:-}
+      - POSTGRES_SERVER=postgres
+      - POSTGRES_PORT=5432
+      - POSTGRES_USER=${POSTGRES_USER}
+      - POSTGRES_PASSWORD=${POSTGRES_PASSWORD}
+      - POSTGRES_DB=${POSTGRES_DB}
+      - REDIS_URL=redis://redis:6379/0
+      - STRAVA_MOCK_MODE=${STRAVA_MOCK_MODE:-false}
+      - STRAVA_CLIENT_ID=${STRAVA_CLIENT_ID}
+      - STRAVA_CLIENT_SECRET=${STRAVA_CLIENT_SECRET}
+      - STRAVA_VERIFY_TOKEN=${STRAVA_VERIFY_TOKEN}
+      - STRAVA_WEBHOOK_CALLBACK_URL=${STRAVA_WEBHOOK_CALLBACK_URL}
+      - TELEGRAM_BOT_TOKEN=${TELEGRAM_BOT_TOKEN}
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:8000/health"]
+      interval: 30s
+      timeout: 5s
+      retries: 3
+      start_period: 15s
+    depends_on:
+      postgres:
+        condition: service_healthy
+      redis:
+        condition: service_healthy
+    networks:
+      - velopulse_prod_net
+
+  worker:
+    build:
+      context: .
+      dockerfile: Dockerfile.prod
+    container_name: velopulse_prod_worker
+    restart: always
+    command: [
+      "taskiq",
+      "worker",
+      "velopulse.tasks.broker:broker",
+      "velopulse.tasks.activities",
+      "velopulse.tasks.weather",
+      "velopulse.tasks.wear",
+      "velopulse.tasks.notifications"
+    ]
+    environment:
+      - ENVIRONMENT=production
+      - DEBUG=false
+      - LOG_FORMAT=json
+      - SECRET_KEY=${SECRET_KEY}
+      - ENCRYPTION_KEY=${ENCRYPTION_KEY:-}
+      - POSTGRES_SERVER=postgres
+      - POSTGRES_PORT=5432
+      - POSTGRES_USER=${POSTGRES_USER}
+      - POSTGRES_PASSWORD=${POSTGRES_PASSWORD}
+      - POSTGRES_DB=${POSTGRES_DB}
+      - REDIS_URL=redis://redis:6379/0
+      - STRAVA_MOCK_MODE=${STRAVA_MOCK_MODE:-false}
+      - STRAVA_CLIENT_ID=${STRAVA_CLIENT_ID}
+      - STRAVA_CLIENT_SECRET=${STRAVA_CLIENT_SECRET}
+      - TELEGRAM_BOT_TOKEN=${TELEGRAM_BOT_TOKEN}
+    depends_on:
+      postgres:
+        condition: service_healthy
+      redis:
+        condition: service_healthy
+    networks:
+      - velopulse_prod_net
+
+  bot:
+    build:
+      context: .
+      dockerfile: Dockerfile.prod
+    container_name: velopulse_prod_bot
+    restart: always
+    command: ["python", "-m", "velopulse.bot.main"]
+    environment:
+      - ENVIRONMENT=production
+      - DEBUG=false
+      - LOG_FORMAT=json
+      - SECRET_KEY=${SECRET_KEY}
+      - POSTGRES_SERVER=postgres
+      - POSTGRES_PORT=5432
+      - POSTGRES_USER=${POSTGRES_USER}
+      - POSTGRES_PASSWORD=${POSTGRES_PASSWORD}
+      - POSTGRES_DB=${POSTGRES_DB}
+      - REDIS_URL=redis://redis:6379/0
+      - TELEGRAM_BOT_TOKEN=${TELEGRAM_BOT_TOKEN}
+    depends_on:
+      postgres:
+        condition: service_healthy
+      redis:
+        condition: service_healthy
+    networks:
+      - velopulse_prod_net
+
+  postgres:
+    image: postgres:16-alpine
+    container_name: velopulse_prod_postgres
+    restart: always
+    environment:
+      - POSTGRES_USER=${POSTGRES_USER}
+      - POSTGRES_PASSWORD=${POSTGRES_PASSWORD}
+      - POSTGRES_DB=${POSTGRES_DB}
+    volumes:
+      - postgres_prod_data:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U ${POSTGRES_USER} -d ${POSTGRES_DB}"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+      start_period: 10s
+    networks:
+      - velopulse_prod_net
+
+  redis:
+    image: redis:7-alpine
+    container_name: velopulse_prod_redis
+    restart: always
+    command: ["redis-server", "--appendonly", "yes", "--maxmemory", "512mb", "--maxmemory-policy", "noeviction"]
+    volumes:
+      - redis_prod_data:/data
+    healthcheck:
+      test: ["CMD", "redis-cli", "ping"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+      start_period: 5s
+    networks:
+      - velopulse_prod_net
+
+volumes:
+  postgres_prod_data:
+    driver: local
+  redis_prod_data:
+    driver: local
+  caddy_data:
+    driver: local
+  caddy_config:
+    driver: local
+
+networks:
+  velopulse_prod_net:
+    driver: bridge

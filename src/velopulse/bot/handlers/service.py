@@ -122,11 +122,7 @@ async def handle_bike_selected(query: CallbackQuery, state: FSMContext) -> None:
     lang = data.get("language", "en")
 
     async with get_session_context() as session:
-        bike_stmt = (
-            select(Bike)
-            .where(Bike.id == bike_id)
-            .options(selectinload(Bike.components))
-        )
+        bike_stmt = select(Bike).where(Bike.id == bike_id).options(selectinload(Bike.components))
         bike = (await session.execute(bike_stmt)).scalar_one_or_none()
         if not bike:
             await query.answer("Bike not found", show_alert=True)

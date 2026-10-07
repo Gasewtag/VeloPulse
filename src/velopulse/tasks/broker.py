@@ -9,6 +9,7 @@ from taskiq import TaskiqMessage, TaskiqMiddleware, TaskiqResult
 from taskiq_redis import ListQueueBroker, RedisAsyncResultBackend
 
 from velopulse.core.config import get_settings
+from velopulse.observability.taskiq_middleware import TaskiqCorrelationMiddleware
 
 logger = logging.getLogger("velopulse.tasks.broker")
 settings = get_settings()
@@ -53,14 +54,17 @@ result_backend: RedisAsyncResultBackend[Any] = RedisAsyncResultBackend(
     redis_url=settings.REDIS_URL,
 )
 
-# Initialize the message broker using Redis with DLQ middleware
+# Initialize the message broker using Redis with DLQ and correlation middleware
 broker = (
     ListQueueBroker(
         url=settings.REDIS_URL,
         socket_timeout=None,
     )
     .with_result_backend(result_backend)
-    .with_middlewares(DLQMiddleware(settings.REDIS_URL))
+    .with_middlewares(
+        TaskiqCorrelationMiddleware(),
+        DLQMiddleware(settings.REDIS_URL),
+    )
 )
 
 # Initialize Taskiq for FastAPI to integrate dependency injection

@@ -1,16 +1,64 @@
-"""Logging configuration with structured ISO timestamps."""
+"""Logging configuration with structured ISO timestamps, JSON format, and correlation tracing."""
 
+import json
 import logging
 import sys
+from datetime import UTC, datetime
+from typing import Any
+
+from velopulse.observability.context import get_correlation_id
 
 
-def setup_logging(debug: bool = False) -> None:
-    """Configure standardized logging format with timestamps across all handlers."""
+class StructuredJSONFormatter(logging.Formatter):
+    """Formats log records as newline-delimited JSON objects with correlation IDs."""
+
+    def format(self, record: logging.LogRecord) -> str:
+        log_entry: dict[str, Any] = {
+            "timestamp": datetime.now(UTC).isoformat(),
+            "level": record.levelname,
+            "logger": record.name,
+            "message": record.getMessage(),
+            "module": record.module,
+            "line": record.lineno,
+        }
+
+        cid = get_correlation_id()
+        if cid:
+            log_entry["correlation_id"] = cid
+
+        if record.exc_info:
+            log_entry["exception"] = self.formatException(record.exc_info)
+
+        if record.stack_info:
+            log_entry["stack_info"] = self.formatStack(record.stack_info)
+
+        return json.dumps(log_entry, default=str)
+
+
+class TextCorrelationFormatter(logging.Formatter):
+    """Formats log records with ISO timestamps and active correlation ID in text format."""
+
+    def format(self, record: logging.LogRecord) -> str:
+        cid = get_correlation_id()
+        record.correlation_prefix = f"[{cid}]" if cid else "[-]"
+        return super().format(record)
+
+
+def setup_logging(debug: bool = False, log_format: str = "auto") -> None:
+    """Configure standardized logging format with correlation IDs across all handlers."""
     log_level = logging.DEBUG if debug else logging.INFO
-    log_format = "%(asctime)s.%(msecs)03d [%(levelname)s] [%(name)s]: %(message)s"
-    date_format = "%Y-%m-%d %H:%M:%S"
 
-    formatter = logging.Formatter(fmt=log_format, datefmt=date_format)
+    use_json = log_format == "json"
+
+    formatter: logging.Formatter
+    if use_json:
+        formatter = StructuredJSONFormatter()
+    else:
+        text_format = (
+            "%(asctime)s.%(msecs)03d [%(levelname)s] [%(name)s] %(correlation_prefix)s: %(message)s"
+        )
+        date_format = "%Y-%m-%d %H:%M:%S"
+        formatter = TextCorrelationFormatter(fmt=text_format, datefmt=date_format)
 
     # Configure root logger
     root_logger = logging.getLogger()

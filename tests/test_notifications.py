@@ -215,3 +215,68 @@ async def test_dispatch_notifications_task_success(db_session: AsyncSession) -> 
     # Only worn_chain should be passed (ATTENTION_NEEDED), not optimal_cassette
     assert len(call_kwargs["components_to_alert"]) == 1
     assert call_kwargs["components_to_alert"][0].id == worn_chain.id
+
+
+@pytest.mark.asyncio
+async def test_dispatch_wear_alert_all_suppressed() -> None:
+    """Verify dispatch returns False when all alerts are suppressed."""
+    mock_bot = AsyncMock()
+    mock_redis = AsyncMock()
+    mock_redis.exists.return_value = True  # Cooldown active
+
+    dispatcher = NotificationDispatcher(bot=mock_bot, redis_client=mock_redis)
+    user = User(
+        strava_athlete_id=98765,
+        first_name="ActiveRider",
+        telegram_chat_id=1234567,
+    )
+    bike = Bike(name="Gravel", bike_type=BikeType.GRAVEL)
+    activity = Activity(name="Gravel Ride", distance_m=Decimal("40000"))
+    comp = Component(
+        component_type=ComponentType.CHAIN,
+        brand_model="SRAM Eagle",
+        lifespan_wear_points=Decimal("3000"),
+        current_wear_points=Decimal("2500"),
+        status=ComponentStatus.ATTENTION_NEEDED,
+    )
+
+    result = await dispatcher.dispatch_wear_alert(user, bike, activity, [comp])
+    assert result is False
+    mock_bot.send_message.assert_not_called()
+
+
+@pytest.mark.asyncio
+async def test_dispatch_wear_alert_send_error_and_close() -> None:
+    """Verify error during bot.send_message is handled and close terminates connections."""
+    mock_bot = AsyncMock()
+    mock_bot.send_message.side_effect = RuntimeError("Telegram Network Timeout")
+    mock_bot.session = AsyncMock()
+    mock_bot.session.close = AsyncMock()
+
+    mock_redis = AsyncMock()
+    mock_redis.exists.return_value = False
+    mock_redis.aclose = AsyncMock()
+
+    dispatcher = NotificationDispatcher(bot=mock_bot, redis_client=mock_redis)
+    dispatcher._owns_redis = True
+    user = User(
+        strava_athlete_id=98766,
+        first_name="ActiveRider",
+        telegram_chat_id=1234568,
+    )
+    bike = Bike(name="Road", bike_type=BikeType.ROAD)
+    activity = Activity(name="Road Ride", distance_m=Decimal("50000"))
+    comp = Component(
+        component_type=ComponentType.CHAIN,
+        brand_model="Shimano 105",
+        lifespan_wear_points=Decimal("3000"),
+        current_wear_points=Decimal("2900"),
+        status=ComponentStatus.REPLACE_RECOMMENDED,
+    )
+
+    result = await dispatcher.dispatch_wear_alert(user, bike, activity, [comp])
+    assert result is False
+
+    await dispatcher.close()
+    mock_redis.aclose.assert_called_once()
+    mock_bot.session.close.assert_called_once()

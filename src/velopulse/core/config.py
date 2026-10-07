@@ -23,6 +23,8 @@ class Settings(BaseSettings):
     API_V1_STR: str = "/api/v1"
     SECRET_KEY: str = "temporary-dev-secret-key-change-in-production-min-32-bytes"
     ENCRYPTION_KEY: str = ""
+    LOG_FORMAT: Literal["text", "json", "auto"] = "auto"
+    PROMETHEUS_ENABLED: bool = True
 
     # Server Binding
     HOST: str = "0.0.0.0"

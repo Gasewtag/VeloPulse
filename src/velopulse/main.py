@@ -8,7 +8,7 @@ from datetime import UTC, datetime
 from typing import Any
 
 import redis.asyncio as aioredis
-from fastapi import FastAPI
+from fastapi import FastAPI, Response
 from fastapi.middleware.cors import CORSMiddleware
 from sqlalchemy import text
 
@@ -17,9 +17,16 @@ from velopulse.api.v1.router import api_router
 from velopulse.core.config import get_settings
 from velopulse.core.logging import setup_logging
 from velopulse.db.session import dispose_engine, engine
+from velopulse.observability import (
+    SYSTEM_HEALTH_STATUS,
+    CorrelationIdMiddleware,
+    PrometheusMetricsMiddleware,
+    get_metrics_payload,
+    update_queue_backlog_metrics,
+)
 
 settings = get_settings()
-setup_logging(debug=settings.DEBUG)
+setup_logging(debug=settings.DEBUG, log_format=settings.LOG_FORMAT)
 logger = logging.getLogger("velopulse.health")
 
 
@@ -55,6 +62,11 @@ def create_application() -> FastAPI:
         allow_headers=["*"],
     )
 
+    # Observability Middlewares
+    if settings.PROMETHEUS_ENABLED:
+        app.add_middleware(PrometheusMetricsMiddleware)
+    app.add_middleware(CorrelationIdMiddleware)
+
     # Base Health Check Route
     @app.get("/health", tags=["Health"], summary="System health probe")
     async def health_check() -> dict[str, Any]:
@@ -88,6 +100,14 @@ def create_application() -> FastAPI:
         is_healthy = all(status == "connected" for status in checks.values())
         overall_status = "healthy" if is_healthy else "degraded"
 
+        # Update Prometheus health gauges
+        SYSTEM_HEALTH_STATUS.labels(component="database").set(
+            1.0 if checks["database"] == "connected" else 0.0
+        )
+        SYSTEM_HEALTH_STATUS.labels(component="redis").set(
+            1.0 if checks["redis"] == "connected" else 0.0
+        )
+
         logger.info(
             "Health probe [%s]: database=%s, redis=%s, overall=%s",
             timestamp,
@@ -104,6 +124,24 @@ def create_application() -> FastAPI:
             "environment": settings.ENVIRONMENT,
             "checks": checks,
         }
+
+    # Prometheus Metrics Exposition Endpoint
+    @app.get(
+        "/metrics",
+        tags=["Observability"],
+        summary="Prometheus telemetry and metrics",
+        response_class=Response,
+    )
+    async def metrics_endpoint() -> Response:
+        try:
+            redis_client = aioredis.from_url(settings.REDIS_URL, decode_responses=False)
+            await update_queue_backlog_metrics(redis_client)
+            await redis_client.aclose()
+        except Exception as exc:
+            logger.debug("Failed updating queue metrics during scrape: %s", exc)
+
+        payload, content_type = get_metrics_payload()
+        return Response(content=payload, media_type=content_type)
 
     # Mount API v1 router
     app.include_router(api_router, prefix=settings.API_V1_STR)

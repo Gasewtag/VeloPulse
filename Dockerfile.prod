@@ -1,0 +1,66 @@
+# ==============================================================================
+# Production Dockerfile for VeloPulse (Hardened, Non-root, Minimal Attack Surface)
+# ==============================================================================
+
+# Stage 1: Build stage (Installs only production wheels into isolated virtualenv)
+FROM python:3.12-slim AS builder
+
+WORKDIR /build
+
+ENV DEBIAN_FRONTEND=noninteractive
+RUN apt-get update && apt-get install -y --no-install-recommends \
+    build-essential \
+    curl \
+    && rm -rf /var/lib/apt/lists/*
+
+COPY pyproject.toml README.md ./
+COPY src/ ./src/
+
+RUN python -m venv /opt/venv
+ENV PATH="/opt/venv/bin:$PATH"
+
+RUN pip install --no-cache-dir --upgrade pip setuptools wheel hatchling && \
+    pip install --no-cache-dir "."
+
+# Stage 2: Minimal hardened runtime stage
+FROM python:3.12-slim AS runner
+
+WORKDIR /app
+
+ENV PATH="/opt/venv/bin:$PATH" \
+    PYTHONUNBUFFERED=1 \
+    PYTHONDONTWRITEBYTECODE=1 \
+    PYTHONFAULTHANDLER=1 \
+    ENVIRONMENT=production \
+    DEBUG=false
+
+# Install curl strictly for container health probing
+RUN apt-get update && apt-get install -y --no-install-recommends \
+    curl \
+    && rm -rf /var/lib/apt/lists/*
+
+# Copy pre-compiled production virtual environment
+COPY --from=builder /opt/venv /opt/venv
+
+# Enforce least-privilege security principle: Unprivileged non-root user
+RUN groupadd -g 10001 appgroup && \
+    useradd -u 10001 -g appgroup -s /usr/sbin/nologin -m appuser
+
+# Copy application runtime files
+COPY pyproject.toml README.md alembic.ini /app/
+COPY alembic/ /app/alembic/
+COPY src/ /app/src/
+
+# Restrict permissions
+RUN chown -R appuser:appgroup /app && \
+    chmod -R 550 /app && \
+    chmod -R 770 /app/alembic
+
+USER appuser
+
+EXPOSE 8000
+
+HEALTHCHECK --interval=30s --timeout=5s --start-period=15s --retries=3 \
+    CMD curl -f http://localhost:8000/health || exit 1
+
+CMD ["uvicorn", "velopulse.main:app", "--host", "0.0.0.0", "--port", "8000", "--workers", "4", "--no-access-log"]

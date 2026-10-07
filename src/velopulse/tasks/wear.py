@@ -2,6 +2,7 @@
 
 import importlib
 import logging
+import time
 import uuid
 from datetime import UTC, datetime
 from decimal import Decimal
@@ -16,6 +17,7 @@ from velopulse.db.models.component import Component
 from velopulse.db.models.enums import ComponentStatus
 from velopulse.db.models.wear import ActivityComponentWear
 from velopulse.db.session import get_session_context
+from velopulse.observability.metrics import WEAR_CALCULATION_DURATION_SECONDS
 from velopulse.services.wear.service import WearCalculationService
 from velopulse.tasks.broker import broker
 
@@ -84,11 +86,13 @@ async def calculate_wear_task(activity_id: str | uuid.UUID) -> None:
 
                 # 4. Execute Physics Calculation
                 service = WearCalculationService()
+                start_calc = time.perf_counter()
                 calc_result = service.calculate_activity_wear(
                     activity=activity,
                     components=components,
                     bike_type=bike.bike_type,
                 )
+                WEAR_CALCULATION_DURATION_SECONDS.observe(time.perf_counter() - start_calc)
 
                 # 5. Persist Wear Attributions and Update Components
                 comp_map = {c.id: c for c in components}
