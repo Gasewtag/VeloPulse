@@ -1,6 +1,7 @@
 """Weather telemetry enrichment tasks for Taskiq background workers."""
 
 import logging
+import time
 import uuid
 
 from redis.asyncio import Redis
@@ -10,6 +11,7 @@ from velopulse.core.config import get_settings
 from velopulse.db.models.activity import Activity
 from velopulse.db.models.bike import Bike
 from velopulse.db.session import get_session_context
+from velopulse.observability.metrics import WEATHER_ENRICHMENT_DURATION_SECONDS
 from velopulse.services.weather.service import WeatherEnrichmentService
 from velopulse.tasks.broker import broker
 
@@ -58,6 +60,7 @@ async def enrich_weather_task(activity_id: str | uuid.UUID) -> None:
 
                 # 4. Compute Environmental Weather Telemetry
                 service = WeatherEnrichmentService(settings=settings)
+                start_enrich = time.perf_counter()
                 weather_result = await service.enrich_activity_weather(
                     start_latitude=activity.start_latitude,
                     start_longitude=activity.start_longitude,
@@ -65,6 +68,7 @@ async def enrich_weather_task(activity_id: str | uuid.UUID) -> None:
                     moving_time_s=activity.moving_time_s,
                     bike_type=bike_type_val,
                 )
+                WEATHER_ENRICHMENT_DURATION_SECONDS.observe(time.perf_counter() - start_enrich)
 
                 # 5. Persist Enriched Telemetry to PostgreSQL
                 activity.weather_data = weather_result.model_dump(mode="json")

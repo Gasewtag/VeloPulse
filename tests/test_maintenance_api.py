@@ -145,9 +145,7 @@ async def test_get_bike_maintenance_filter_and_pagination(
     await db_session.commit()
 
     # Filter for repair only
-    resp = await async_client.get(
-        f"/api/v1/bikes/{bike.id}/maintenance?log_type=repair"
-    )
+    resp = await async_client.get(f"/api/v1/bikes/{bike.id}/maintenance?log_type=repair")
     assert resp.status_code == 200
     data = resp.json()
     assert data["total_events"] == 1
@@ -155,9 +153,7 @@ async def test_get_bike_maintenance_filter_and_pagination(
     assert data["items"][0]["log_type"] == "repair"
 
     # Pagination: limit=1
-    resp_limit = await async_client.get(
-        f"/api/v1/bikes/{bike.id}/maintenance?limit=1"
-    )
+    resp_limit = await async_client.get(f"/api/v1/bikes/{bike.id}/maintenance?limit=1")
     assert resp_limit.status_code == 200
     assert len(resp_limit.json()["items"]) == 1
     assert resp_limit.json()["total_events"] == 2
@@ -272,3 +268,100 @@ async def test_replace_component_api_success(
     assert data["brand_model"] == "Shimano Dura-Ace 12s"
     assert float(data["cost"]) == 65.00
     assert data["component_id"] != str(comp.id)
+
+
+@pytest.mark.asyncio
+async def test_record_maintenance_api_errors(
+    async_client: AsyncClient,
+    db_session: AsyncSession,
+) -> None:
+    """Verify 404 responses for invalid bike and component IDs."""
+    random_bike_id = uuid.uuid4()
+    random_comp_id = uuid.uuid4()
+
+    # 1. Bike not found
+    resp = await async_client.post(
+        f"/api/v1/bikes/{random_bike_id}/maintenance",
+        json={"component_id": str(random_comp_id), "log_type": "clean_and_lube"},
+    )
+    assert resp.status_code == 404
+    assert "not found" in resp.json()["detail"].lower()
+
+    # 2. Existing bike, but component not found
+    athlete_id = random.randint(10_000_000, 99_999_999)
+    user = User(
+        first_name="Test Rider",
+        strava_athlete_id=athlete_id,
+        access_token="tok",
+        refresh_token="ref",
+        token_expires_at=datetime.now(UTC),
+    )
+    db_session.add(user)
+    await db_session.flush()
+
+    bike = Bike(
+        user_id=user.id,
+        strava_gear_id=f"g_err1_{uuid.uuid4().hex[:8]}",
+        name="Test Bike",
+        bike_type=BikeType.ROAD,
+    )
+    db_session.add(bike)
+    await db_session.commit()
+
+    resp2 = await async_client.post(
+        f"/api/v1/bikes/{bike.id}/maintenance",
+        json={"component_id": str(random_comp_id), "log_type": "clean_and_lube"},
+    )
+    assert resp2.status_code == 404
+
+
+@pytest.mark.asyncio
+async def test_replace_component_api_errors(
+    async_client: AsyncClient,
+    db_session: AsyncSession,
+) -> None:
+    """Verify 404 responses for replace with invalid bike and component IDs."""
+    random_bike_id = uuid.uuid4()
+    random_comp_id = uuid.uuid4()
+
+    # 1. Bike not found
+    resp = await async_client.post(
+        f"/api/v1/bikes/{random_bike_id}/replace",
+        json={
+            "component_id": str(random_comp_id),
+            "new_brand_model": "New Chain",
+            "new_lifespan_wear_points": "2000.00",
+        },
+    )
+    assert resp.status_code == 404
+
+    # 2. Existing bike, but component not found
+    athlete_id = random.randint(10_000_000, 99_999_999)
+    user = User(
+        first_name="Test Rider",
+        strava_athlete_id=athlete_id,
+        access_token="tok",
+        refresh_token="ref",
+        token_expires_at=datetime.now(UTC),
+    )
+    db_session.add(user)
+    await db_session.flush()
+
+    bike = Bike(
+        user_id=user.id,
+        strava_gear_id=f"g_err2_{uuid.uuid4().hex[:8]}",
+        name="Test Bike",
+        bike_type=BikeType.ROAD,
+    )
+    db_session.add(bike)
+    await db_session.commit()
+
+    resp2 = await async_client.post(
+        f"/api/v1/bikes/{bike.id}/replace",
+        json={
+            "component_id": str(random_comp_id),
+            "new_brand_model": "New Chain",
+            "new_lifespan_wear_points": "2000.00",
+        },
+    )
+    assert resp2.status_code == 404

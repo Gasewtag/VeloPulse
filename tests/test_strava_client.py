@@ -185,3 +185,108 @@ async def test_webhook_subscription_lifecycle() -> None:
         return_value=httpx.Response(204)
     )
     await client.delete_subscription(1001)
+
+
+@pytest.mark.asyncio
+@respx.mock
+async def test_live_token_refresh_and_errors() -> None:
+    """Verify live mode token refresh success and error handling."""
+    live_settings = Settings(
+        STRAVA_MOCK_MODE=False,
+        STRAVA_CLIENT_ID="99999",
+        STRAVA_CLIENT_SECRET="live_secret",
+    )
+    client = StravaClient(settings=live_settings)
+
+    # Success
+    respx.post("https://www.strava.com/oauth/token").mock(
+        return_value=httpx.Response(
+            200,
+            json={
+                "access_token": "refreshed_live_token",
+                "refresh_token": "new_refresh_token",
+                "expires_at": 1800000000,
+                "expires_in": 21600,
+                "token_type": "Bearer",
+            },
+        )
+    )
+    ref = await client.refresh_access_token("valid_refresh_token")
+    assert ref.access_token == "refreshed_live_token"
+
+    # Error
+    respx.post("https://www.strava.com/oauth/token").mock(
+        return_value=httpx.Response(400, text="Bad Request")
+    )
+    with pytest.raises(StravaAPIError):
+        await client.refresh_access_token("bad_token")
+
+
+@pytest.mark.asyncio
+@respx.mock
+async def test_live_get_athlete_profile_and_errors() -> None:
+    """Verify live get_athlete_profile success and error handling."""
+    live_settings = Settings(STRAVA_MOCK_MODE=False)
+    client = StravaClient(settings=live_settings)
+
+    # Success
+    respx.get("https://www.strava.com/api/v3/athlete").mock(
+        return_value=httpx.Response(
+            200,
+            json={"id": 8888, "firstname": "Wout", "lastname": "van Aert", "bikes": []},
+        )
+    )
+    athlete = await client.get_athlete_profile("valid_tok")
+    assert athlete.id == 8888
+    assert athlete.firstname == "Wout"
+
+    # Error
+    respx.get("https://www.strava.com/api/v3/athlete").mock(
+        return_value=httpx.Response(401, text="Unauthorized")
+    )
+    with pytest.raises(StravaAPIError):
+        await client.get_athlete_profile("invalid_tok")
+
+
+@pytest.mark.asyncio
+@respx.mock
+async def test_live_get_activity_and_delete_error() -> None:
+    """Verify live get_activity success, error, and delete_subscription error."""
+    live_settings = Settings(STRAVA_MOCK_MODE=False)
+    client = StravaClient(settings=live_settings)
+
+    # Activity Success
+    respx.get("https://www.strava.com/api/v3/activities/12345").mock(
+        return_value=httpx.Response(
+            200,
+            json={
+                "id": 12345,
+                "name": "Morning Ride",
+                "distance": 32000.0,
+                "moving_time": 4200,
+                "total_elevation_gain": 350.0,
+                "type": "Ride",
+                "sport_type": "Ride",
+                "start_date": "2026-09-24T08:00:00Z",
+                "start_latlng": [45.0, 9.0],
+                "gear_id": "b111",
+            },
+        )
+    )
+    act = await client.get_activity("token", 12345)
+    assert act.id == 12345
+    assert act.distance == 32000.0
+
+    # Activity Error
+    respx.get("https://www.strava.com/api/v3/activities/99999").mock(
+        return_value=httpx.Response(404, text="Not Found")
+    )
+    with pytest.raises(StravaAPIError):
+        await client.get_activity("token", 99999)
+
+    # Delete Subscription Error
+    respx.delete("https://www.strava.com/api/v3/push_subscriptions/555").mock(
+        return_value=httpx.Response(500, text="Server Error")
+    )
+    with pytest.raises(StravaAPIError):
+        await client.delete_subscription(555)

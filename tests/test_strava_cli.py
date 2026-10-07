@@ -95,3 +95,94 @@ def test_cli_main_entrypoint() -> None:
     ):
         main()
         mock_cmd.assert_called_once()
+
+    with (
+        patch(
+            "sys.argv",
+            [
+                "strava.py",
+                "register-webhook",
+                "--callback-url",
+                "http://test/cb",
+                "--verify-token",
+                "tok",
+            ],
+        ),
+        patch("velopulse.cli.strava.cmd_register_webhook", new_callable=AsyncMock) as mock_reg,
+    ):
+        main()
+        mock_reg.assert_called_once()
+
+    with (
+        patch("sys.argv", ["strava.py", "delete-webhook", "--subscription-id", "123"]),
+        patch("velopulse.cli.strava.cmd_delete_webhook", new_callable=AsyncMock) as mock_del,
+    ):
+        main()
+        mock_del.assert_called_once()
+
+    with (
+        patch(
+            "sys.argv", ["strava.py", "simulate-event", "--object-id", "999", "--owner-id", "111"]
+        ),
+        patch("velopulse.cli.strava.cmd_simulate_event", new_callable=AsyncMock) as mock_sim,
+    ):
+        main()
+        mock_sim.assert_called_once()
+
+
+@pytest.mark.asyncio
+async def test_cmd_list_webhooks_empty_and_error(capsys: pytest.CaptureFixture[str]) -> None:
+    """Verify list-webhooks handling of empty list and StravaAPIError."""
+    client = StravaClient()
+    from velopulse.services.strava.client import StravaAPIError
+
+    # Empty list
+    with patch.object(client, "list_subscriptions", new_callable=AsyncMock) as mock_list:
+        mock_list.return_value = []
+        await cmd_list_webhooks(client)
+    assert "No active Strava webhook subscriptions found." in capsys.readouterr().out
+
+    # StravaAPIError
+    with patch.object(client, "list_subscriptions", new_callable=AsyncMock) as mock_err:
+        mock_err.side_effect = StravaAPIError("Network failure")
+        with pytest.raises(SystemExit):
+            await cmd_list_webhooks(client)
+
+
+@pytest.mark.asyncio
+async def test_cmd_register_and_delete_errors() -> None:
+    """Verify error exits on register and delete webhook."""
+    client = StravaClient()
+    from velopulse.services.strava.client import StravaAPIError
+
+    with patch.object(client, "create_subscription", new_callable=AsyncMock) as mock_create:
+        mock_create.side_effect = StravaAPIError("Registration failed")
+        with pytest.raises(SystemExit):
+            await cmd_register_webhook(client, "http://cb", "tok")
+
+    with patch.object(client, "delete_subscription", new_callable=AsyncMock) as mock_del:
+        mock_del.side_effect = StravaAPIError("Deletion failed")
+        with pytest.raises(SystemExit):
+            await cmd_delete_webhook(client, 123)
+
+
+@pytest.mark.asyncio
+async def test_cmd_simulate_event_error_status(capsys: pytest.CaptureFixture[str]) -> None:
+    """Verify simulate-event reports failure on non-204 status."""
+    with patch("httpx.AsyncClient.post", new_callable=AsyncMock) as mock_post:
+        mock_resp = AsyncMock()
+        mock_resp.status_code = 500
+        mock_resp.text = "Internal Server Error"
+        mock_post.return_value = mock_resp
+
+        await cmd_simulate_event(
+            api_url="http://testserver/api/v1/webhooks/strava",
+            object_id=123,
+            object_type="activity",
+            aspect_type="create",
+            owner_id=456,
+        )
+
+    captured = capsys.readouterr()
+    assert "[FAIL]" in captured.out
+    assert "Internal Server Error" in captured.out

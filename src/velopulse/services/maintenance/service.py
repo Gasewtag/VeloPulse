@@ -41,9 +41,7 @@ class MaintenanceService:
     """Service orchestrating maintenance logging, component swaps, and wear adjustments."""
 
     @staticmethod
-    def _calculate_component_status(
-        current_wear: Decimal, lifespan: Decimal
-    ) -> ComponentStatus:
+    def _calculate_component_status(current_wear: Decimal, lifespan: Decimal) -> ComponentStatus:
         """Derive standard component wear status from wear points ratio."""
         if current_wear <= Decimal("0.00"):
             return ComponentStatus.NEW
@@ -256,9 +254,7 @@ class MaintenanceService:
 
         stats_res = await session.execute(stats_query)
         total_cost_val, total_events_val = stats_res.one()
-        total_cost = (
-            Decimal(str(total_cost_val)) if total_cost_val is not None else Decimal("0.00")
-        )
+        total_cost = Decimal(str(total_cost_val)) if total_cost_val is not None else Decimal("0.00")
         total_events = int(total_events_val or 0)
 
         # Query paginated log list

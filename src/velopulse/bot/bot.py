@@ -20,7 +20,7 @@ def create_bot(settings: Settings | None = None) -> Bot:
     if not s.TELEGRAM_BOT_TOKEN:
         logger.warning("TELEGRAM_BOT_TOKEN is not set or empty in configuration")
     return Bot(
-        token=s.TELEGRAM_BOT_TOKEN or "dummy_token_for_offline_testing",
+        token=s.TELEGRAM_BOT_TOKEN or "123456789:AABBCCDDEEFF_dummy_token_testing",
         default=DefaultBotProperties(parse_mode=ParseMode.HTML),
     )
 

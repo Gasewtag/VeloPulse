@@ -233,6 +233,6 @@ Sprint 09 [feat/09-observability-ci-cd]         ──► Prometheus metrics, he
     * Production `docker-compose.prod.yml` with reverse proxy (Caddy / Nginx) and TLS termination.
     * Automated database backup scripts and secret management documentation.
 * **Definition of Done (DoD):**
-  - CI pipeline passes on GitHub Actions with 100% green status on all checks.
-  - Test suite maintains >85% overall code coverage.
-  - Production container boots cleanly as non-root user with zero critical security vulnerabilities.
+  - [x] CI pipeline passes on GitHub Actions with 100% green status on all checks.
+  - [x] Test suite maintains >85% overall code coverage (achieved 86.17%).
+  - [x] Production container boots cleanly as non-root user with zero critical security vulnerabilities.
