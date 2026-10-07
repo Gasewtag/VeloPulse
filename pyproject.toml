@@ -142,8 +142,14 @@ filterwarnings = [
 # Coverage Configuration
 # ------------------------------------------------------------------------------
 [tool.coverage.run]
-source = ["src/velopulse"]
+source = ["velopulse"]
 branch = true
+
+[tool.coverage.paths]
+source = [
+    "src/velopulse",
+    "*/site-packages/velopulse",
+]
 
 [tool.coverage.report]
 show_missing = true

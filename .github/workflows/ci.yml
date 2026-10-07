@@ -31,7 +31,7 @@ jobs:
       - name: Install build and quality tooling
         run: |
           python -m pip install --upgrade pip
-          pip install ".[dev]"
+          pip install -e ".[dev]"
 
       - name: Run Ruff Linter
         run: ruff check .
@@ -72,6 +72,7 @@ jobs:
           --health-retries 5
 
     env:
+      PYTHONPATH: src
       ENVIRONMENT: test
       DEBUG: "true"
       LOG_FORMAT: text
@@ -103,14 +104,14 @@ jobs:
       - name: Install dependencies
         run: |
           python -m pip install --upgrade pip
-          pip install ".[dev]"
+          pip install -e ".[dev]"
 
       - name: Apply Alembic Migrations
         run: alembic upgrade head
 
       - name: Execute Pytest with Coverage
         run: |
-          pytest -v --cov=src/velopulse --cov-report=xml --cov-report=term-missing
+          pytest -v --cov=velopulse --cov-report=xml --cov-report=term-missing
 
       - name: Upload Test Coverage Artifacts
         uses: actions/upload-artifact@v4
@@ -128,7 +129,7 @@ jobs:
         uses: actions/checkout@v4
 
       - name: Set up Docker Buildx
-        uses: actions/setup-buildx-action@v3
+        uses: docker/setup-buildx-action@v3
 
       - name: Build Production Docker Image
         uses: docker/build-push-action@v5
