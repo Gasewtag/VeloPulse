@@ -22,6 +22,14 @@ services:
         condition: service_healthy
     networks:
       - velopulse_prod_net
+    deploy:
+      resources:
+        reservations:
+          cpus: "0.05"
+          memory: 32M
+        limits:
+          cpus: "0.50"
+          memory: 128M
 
   api:
     build:
@@ -63,6 +71,14 @@ services:
         condition: service_healthy
     networks:
       - velopulse_prod_net
+    deploy:
+      resources:
+        reservations:
+          cpus: "0.10"
+          memory: 150M
+        limits:
+          cpus: "1.00"
+          memory: 350M
 
   worker:
     build:
@@ -102,6 +118,14 @@ services:
         condition: service_healthy
     networks:
       - velopulse_prod_net
+    deploy:
+      resources:
+        reservations:
+          cpus: "0.10"
+          memory: 450M
+        limits:
+          cpus: "1.50"
+          memory: 750M
 
   bot:
     build:
@@ -129,6 +153,14 @@ services:
         condition: service_healthy
     networks:
       - velopulse_prod_net
+    deploy:
+      resources:
+        reservations:
+          cpus: "0.05"
+          memory: 200M
+        limits:
+          cpus: "0.50"
+          memory: 350M
 
   postgres:
     image: postgres:16-alpine
@@ -148,12 +180,20 @@ services:
       start_period: 10s
     networks:
       - velopulse_prod_net
+    deploy:
+      resources:
+        reservations:
+          cpus: "0.10"
+          memory: 64M
+        limits:
+          cpus: "1.00"
+          memory: 256M
 
   redis:
     image: redis:7-alpine
     container_name: velopulse_prod_redis
     restart: always
-    command: ["redis-server", "--appendonly", "yes", "--maxmemory", "512mb", "--maxmemory-policy", "noeviction"]
+    command: ["redis-server", "--appendonly", "yes", "--maxmemory", "96mb", "--maxmemory-policy", "noeviction"]
     volumes:
       - redis_prod_data:/data
     healthcheck:
@@ -164,6 +204,14 @@ services:
       start_period: 5s
     networks:
       - velopulse_prod_net
+    deploy:
+      resources:
+        reservations:
+          cpus: "0.05"
+          memory: 20M
+        limits:
+          cpus: "0.50"
+          memory: 100M
 
 volumes:
   postgres_prod_data:
